@@ -1,0 +1,871 @@
+{% extends "base.html" %}
+
+{% block title %}Community{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .community-structure {
+        display: grid;
+        gap: 2rem;
+    }
+
+    .ministry-card {
+        background: var(--soft-white);
+        border-radius: 16px;
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+    }
+
+    .ministry-header {
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .ministry-header.liturgy {
+        background: linear-gradient(135deg, var(--primary-burgundy) 0%, #8B3A44 100%);
+        color: white;
+    }
+
+    .ministry-header.choir {
+        background: linear-gradient(135deg, var(--sacred-blue) 0%, #2A4A6B 100%);
+        color: white;
+    }
+
+    .ministry-header.catechism {
+        background: linear-gradient(135deg, var(--deep-purple) 0%, #5C2254 100%);
+        color: white;
+    }
+
+    .ministry-header.volunteers {
+        background: linear-gradient(135deg, var(--primary-gold) 0%, #B8860B 100%);
+        color: var(--dark-wood);
+    }
+
+    .ministry-header.executive {
+        background: linear-gradient(135deg, var(--dark-wood) 0%, #5A3E2B 100%);
+        color: white;
+    }
+
+    .ministry-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.4rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .ministry-body {
+        padding: 1.5rem;
+    }
+
+    .role-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .role-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .role-title {
+        font-weight: 600;
+        color: var(--dark-wood);
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .members-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .member-chip {
+        background: #F5EFE6;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: var(--transition);
+    }
+
+    .member-chip:hover {
+        background: #EDE4D3;
+    }
+
+    .member-chip .remove-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0;
+        font-size: 0.9rem;
+        transition: var(--transition);
+    }
+
+    .member-chip .remove-btn:hover {
+        color: #DC3545;
+    }
+
+    .add-member-btn {
+        background: none;
+        border: 2px dashed #C0B8A8;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .add-member-btn:hover {
+        border-color: var(--primary-gold);
+        color: var(--primary-burgundy);
+    }
+
+    .priests-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .priest-card {
+        background: linear-gradient(135deg, #FAF8F5 0%, #F5F0E8 100%);
+        border: 1px solid #E8E0D5;
+        border-radius: 12px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: var(--transition);
+    }
+
+    .priest-card:hover {
+        box-shadow: var(--shadow-soft);
+        transform: translateY(-2px);
+    }
+
+    .priest-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary-burgundy) 0%, #8B3A44 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .priest-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .priest-name {
+        font-weight: 600;
+        color: var(--dark-wood);
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .priest-title {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .priest-phone {
+        font-size: 0.8rem;
+        color: var(--sacred-blue);
+    }
+
+    .priest-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .priest-actions button {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0.25rem;
+        font-size: 0.9rem;
+        transition: var(--transition);
+    }
+
+    .priest-actions button:hover {
+        color: var(--primary-burgundy);
+    }
+
+    .priest-actions button.delete:hover {
+        color: #DC3545;
+    }
+
+    .empty-priests {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-muted);
+    }
+
+    .empty-priests i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Community Structure</h2>
+    <p class="page-subtitle">Manage ministry teams and organizational roles</p>
+</div>
+
+<div class="grid grid-2" style="margin-bottom: 2rem;">
+    <!-- Liturgy Ministry -->
+    <div class="ministry-card fade-in">
+        <div class="ministry-header liturgy">
+            <h3 class="ministry-title">
+                <i class="fas fa-book-reader"></i> Liturgy Ministry
+            </h3>
+            <span class="badge" style="background: rgba(255,255,255,0.2); color: white;" id="liturgy-count">0 members</span>
+        </div>
+        <div class="ministry-body">
+            <div class="role-section">
+                <div class="role-title">
+                    <i class="fas fa-crown"></i> Coordinator
+                </div>
+                <div class="members-list" id="liturgy-coordinator-list">
+                    <!-- Will be populated -->
+                </div>
+            </div>
+            <div class="role-section">
+                <div class="role-title">
+                    <i class="fas fa-users"></i> Team Members
+                </div>
+                <div class="members-list" id="liturgy-member-list">
+                    <!-- Will be populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Choir Ministry -->
+    <div class="ministry-card fade-in" style="animation-delay: 0.1s">
+        <div class="ministry-header choir">
+            <h3 class="ministry-title">
+                <i class="fas fa-music"></i> Choir Ministry
+            </h3>
+            <span class="badge" style="background: rgba(255,255,255,0.2); color: white;" id="choir-count">0 members</span>
+        </div>
+        <div class="ministry-body">
+            <div class="role-section">
+                <div class="role-title">
+                    <i class="fas fa-crown"></i> Coordinator
+                </div>
+                <div class="members-list" id="choir-coordinator-list">
+                    <!-- Will be populated -->
+                </div>
+            </div>
+            <div class="role-section">
+                <div class="role-title">
+                    <i class="fas fa-users"></i> Choir Members
+                </div>
+                <div class="members-list" id="choir-member-list">
+                    <!-- Will be populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Catechism Ministry -->
+    <div class="ministry-card fade-in" style="animation-delay: 0.2s">
+        <div class="ministry-header catechism">
+            <h3 class="ministry-title">
+                <i class="fas fa-graduation-cap"></i> Catechism Ministry
+            </h3>
+            <span class="badge" style="background: rgba(255,255,255,0.2); color: white;" id="catechism-count">0 members</span>
+        </div>
+        <div class="ministry-body">
+            <div class="role-section">
+                <div class="role-title">
+                    <i class="fas fa-crown"></i> Coordinator
+                </div>
+                <div class="members-list" id="catechism-coordinator-list">
+                    <!-- Will be populated -->
+                </div>
+            </div>
+            <div class="role-section">
+                <div class="role-title">
+                    <i class="fas fa-chalkboard-teacher"></i> Teachers
+                </div>
+                <div class="members-list" id="catechism-teacher-list">
+                    <!-- Will be populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Volunteers Ministry -->
+    <div class="ministry-card fade-in" style="animation-delay: 0.3s">
+        <div class="ministry-header volunteers">
+            <h3 class="ministry-title">
+                <i class="fas fa-hands-helping"></i> Volunteers
+            </h3>
+            <span class="badge" style="background: rgba(0,0,0,0.15);" id="volunteers-count">0 members</span>
+        </div>
+        <div class="ministry-body">
+            <div class="role-section">
+                <div class="role-title">
+                    <i class="fas fa-crown"></i> Coordinator
+                </div>
+                <div class="members-list" id="volunteers-coordinator-list">
+                    <!-- Will be populated -->
+                </div>
+            </div>
+            <div class="role-section">
+                <div class="role-title">
+                    <i class="fas fa-users"></i> Volunteers
+                </div>
+                <div class="members-list" id="volunteers-member-list">
+                    <!-- Will be populated -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Executive Members -->
+<div class="ministry-card fade-in" style="animation-delay: 0.4s; margin-bottom: 2rem;">
+    <div class="ministry-header executive">
+        <h3 class="ministry-title">
+            <i class="fas fa-star"></i> Executive Committee
+        </h3>
+        <span class="badge" style="background: rgba(255,255,255,0.2); color: white;" id="executive-count">0 members</span>
+    </div>
+    <div class="ministry-body">
+        <div class="members-list" id="executive-member-list">
+            <!-- Will be populated -->
+        </div>
+    </div>
+</div>
+
+<!-- Priests / Celebrants -->
+<div class="ministry-card fade-in" style="animation-delay: 0.5s; margin-bottom: 2rem;">
+    <div class="ministry-header" style="background: linear-gradient(135deg, #4A3728 0%, #6B5344 100%); color: white;">
+        <h3 class="ministry-title">
+            <i class="fas fa-cross"></i> Parish Priests / Celebrants
+        </h3>
+        <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: none;" onclick="showModal('addPriestModal')">
+            <i class="fas fa-plus"></i> Add Priest
+        </button>
+    </div>
+    <div class="ministry-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            <i class="fas fa-info-circle"></i> Manage priests who celebrate masses. These names will appear in the celebrant dropdown when scheduling masses.
+        </p>
+        <div id="priestsList" class="priests-grid">
+            <!-- Will be populated -->
+        </div>
+    </div>
+</div>
+
+<!-- Add Mass Type Modal -->
+<div class="modal-overlay" id="addMassTypeModal">
+    <div class="modal" style="max-width: 700px;">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-church"></i> Add New Mass Type</h3>
+            <button class="modal-close" onclick="hideModal('addMassTypeModal')">&times;</button>
+        </div>
+        <form id="addMassTypeForm">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="form-group">
+                    <label class="form-label">Mass Name *</label>
+                    <input type="text" class="form-input" name="name" required placeholder="e.g., Republic Day Mass">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Default Time</label>
+                        <input type="text" class="form-input" name="default_time" placeholder="e.g., 7:15 AM">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Event Type</label>
+                        <select class="form-select" name="is_special_event">
+                            <option value="true">Special Event ⭐</option>
+                            <option value="false">Regular Mass</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" name="description" placeholder="Brief description of this mass type..." style="min-height: 60px;"></textarea>
+                </div>
+                
+                <!-- Standard Reading Roles -->
+                <div class="form-group" style="background: #F5EFE6; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
+                    <label class="form-label" style="color: var(--primary-burgundy); margin-bottom: 0.75rem;">
+                        <i class="fas fa-book-reader"></i> Standard Reading Roles
+                    </label>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                        All masses include: Introduction, First Reading, Second Reading, Prayer of Faithful
+                    </p>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <input type="checkbox" name="has_third_reading"> Third Reading
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <input type="checkbox" name="has_gospel_narration"> Gospel Narration
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Special Features -->
+                <div class="form-group" style="background: linear-gradient(135deg, rgba(201, 162, 39, 0.1) 0%, rgba(114, 47, 55, 0.05) 100%); padding: 1rem; border-radius: 10px; border: 1px solid rgba(201, 162, 39, 0.3); margin-top: 1rem;">
+                    <label class="form-label" style="color: var(--primary-burgundy); margin-bottom: 0.75rem;">
+                        <i class="fas fa-star"></i> Special Features
+                    </label>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <input type="checkbox" name="has_mc_reader"> MC Reader
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <input type="checkbox" name="has_carols"> Carols
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <input type="checkbox" name="has_thanksgiving"> Thanksgiving
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <input type="checkbox" name="has_apostles"> 12 Apostles
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <input type="checkbox" name="has_morning_adoration"> Morning Adoration
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; background: white; border-radius: 6px;">
+                            <input type="checkbox" name="has_departed_souls_reader"> Departed Souls Reader
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Custom Reading Roles -->
+                <div class="form-group" style="background: #E8F4F8; padding: 1rem; border-radius: 10px; border: 1px solid #B8D4E3; margin-top: 1rem;">
+                    <label class="form-label" style="color: var(--sacred-blue); margin-bottom: 0.75rem;">
+                        <i class="fas fa-plus-circle"></i> Custom Reading Roles
+                    </label>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                        Add any additional custom roles for this mass type
+                    </p>
+                    <div id="customRolesContainer">
+                        <!-- Custom roles will be added here -->
+                    </div>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="addCustomRole()" style="margin-top: 0.5rem;">
+                        <i class="fas fa-plus"></i> Add Custom Role
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="hideModal('addMassTypeModal'); resetCustomRoles();">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Mass Type
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Priest Modal -->
+<div class="modal-overlay" id="addPriestModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-cross"></i> Add Priest</h3>
+            <button class="modal-close" onclick="hideModal('addPriestModal')">&times;</button>
+        </div>
+        <form id="addPriestForm">
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: 100px 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Title</label>
+                        <select class="form-select" name="title">
+                            <option value="Fr.">Fr.</option>
+                            <option value="Rev.">Rev.</option>
+                            <option value="Msgr.">Msgr.</option>
+                            <option value="Bishop">Bishop</option>
+                            <option value="Father">Father</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Name *</label>
+                        <input type="text" class="form-input" name="name" required placeholder="e.g., John Smith">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" class="form-input" name="phone" placeholder="e.g., +91 98765 43210">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="hideModal('addPriestModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Priest
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Priest Modal -->
+<div class="modal-overlay" id="editPriestModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-edit"></i> Edit Priest</h3>
+            <button class="modal-close" onclick="hideModal('editPriestModal')">&times;</button>
+        </div>
+        <form id="editPriestForm">
+            <input type="hidden" name="id" id="editPriestId">
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: 100px 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label">Title</label>
+                        <select class="form-select" name="title" id="editPriestTitle">
+                            <option value="Fr.">Fr.</option>
+                            <option value="Rev.">Rev.</option>
+                            <option value="Msgr.">Msgr.</option>
+                            <option value="Bishop">Bishop</option>
+                            <option value="Father">Father</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Name *</label>
+                        <input type="text" class="form-input" name="name" id="editPriestName" required placeholder="e.g., John Smith">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="text" class="form-input" name="phone" id="editPriestPhone" placeholder="e.g., +91 98765 43210">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="hideModal('editPriestModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update Priest
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add Role Modal -->
+<div class="modal-overlay" id="addRoleModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-user-tag"></i> Add New Role</h3>
+            <button class="modal-close" onclick="hideModal('addRoleModal')">&times;</button>
+        </div>
+        <form id="addRoleForm">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Role Name *</label>
+                    <input type="text" class="form-input" name="name" required placeholder="e.g., Youth Coordinator">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select class="form-select" name="category" required>
+                        <option value="">-- Select Category --</option>
+                        <option value="liturgy">Liturgy</option>
+                        <option value="choir">Choir</option>
+                        <option value="catechism">Catechism</option>
+                        <option value="volunteers">Volunteers</option>
+                        <option value="executive">Executive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" name="description" placeholder="Brief description of this role..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="hideModal('addRoleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Role
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let roles = [];
+    let massTypes = [];
+    let priests = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadData();
+    });
+
+    async function loadData() {
+        roles = await api('/roles');
+        massTypes = await api('/mass-types');
+        priests = await api('/priests');
+        
+        renderMinistries();
+        renderPriests();
+    }
+
+    function renderPriests() {
+        const container = document.getElementById('priestsList');
+        
+        if (priests.length === 0) {
+            container.innerHTML = `
+                <div class="empty-priests" style="grid-column: 1 / -1;">
+                    <i class="fas fa-cross"></i>
+                    <p>No priests added yet</p>
+                    <button class="btn btn-sm btn-primary" onclick="showModal('addPriestModal')" style="margin-top: 0.5rem;">
+                        <i class="fas fa-plus"></i> Add First Priest
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = priests.map(priest => `
+            <div class="priest-card">
+                <div class="priest-avatar">
+                    <i class="fas fa-cross"></i>
+                </div>
+                <div class="priest-info">
+                    <div class="priest-name">${priest.full_name}</div>
+                    <div class="priest-title">${priest.title || 'Fr.'}</div>
+                    ${priest.phone ? `<div class="priest-phone"><i class="fas fa-phone"></i> ${priest.phone}</div>` : ''}
+                </div>
+                <div class="priest-actions">
+                    <button onclick="editPriest(${priest.id})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete" onclick="deletePriest(${priest.id})" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function editPriest(id) {
+        const priest = priests.find(p => p.id === id);
+        if (!priest) return;
+
+        document.getElementById('editPriestId').value = priest.id;
+        document.getElementById('editPriestTitle').value = priest.title || 'Fr.';
+        document.getElementById('editPriestName').value = priest.name;
+        document.getElementById('editPriestPhone').value = priest.phone || '';
+
+        showModal('editPriestModal');
+    }
+
+    async function deletePriest(id) {
+        const priest = priests.find(p => p.id === id);
+        if (!priest) return;
+
+        if (!confirm(`Are you sure you want to remove ${priest.full_name}?`)) return;
+
+        await api(`/priests/${id}`, { method: 'DELETE' });
+        await loadData();
+    }
+
+    function renderMinistries() {
+        const categories = {
+            'liturgy': { coordinator: 'Liturgy Coordinator', member: 'Liturgy Member' },
+            'choir': { coordinator: 'Choir Coordinator', member: 'Choir Member' },
+            'catechism': { coordinator: 'Catechism Coordinator', member: 'Catechism Teacher' },
+            'volunteers': { coordinator: 'Volunteer Coordinator', member: 'Volunteer' },
+            'executive': { member: 'Executive Member' }
+        };
+
+        for (const [category, roleNames] of Object.entries(categories)) {
+            let totalMembers = 0;
+
+            // Coordinator
+            if (roleNames.coordinator) {
+                const coordRole = roles.find(r => r.name === roleNames.coordinator);
+                const coordList = document.getElementById(`${category}-coordinator-list`);
+                if (coordRole && coordList) {
+                    totalMembers += coordRole.members.length;
+                    coordList.innerHTML = coordRole.members.length > 0
+                        ? coordRole.members.map(m => `
+                            <div class="member-chip">
+                                <i class="fas fa-user"></i> ${m}
+                            </div>
+                        `).join('')
+                        : '<span style="color: var(--text-muted); font-size: 0.9rem;">No coordinator assigned</span>';
+                }
+            }
+
+            // Members
+            const memberRole = roles.find(r => r.name === roleNames.member);
+            const memberListId = category === 'catechism' ? `${category}-teacher-list` : `${category}-member-list`;
+            const memberList = document.getElementById(memberListId);
+            if (memberRole && memberList) {
+                totalMembers += memberRole.members.length;
+                memberList.innerHTML = memberRole.members.length > 0
+                    ? memberRole.members.map(m => `
+                        <div class="member-chip">
+                            <i class="fas fa-user"></i> ${m}
+                        </div>
+                    `).join('')
+                    : '<span style="color: var(--text-muted); font-size: 0.9rem;">No members yet</span>';
+            }
+
+            // Update count
+            const countEl = document.getElementById(`${category}-count`);
+            if (countEl) {
+                countEl.textContent = `${totalMembers} member${totalMembers !== 1 ? 's' : ''}`;
+            }
+        }
+    }
+
+    // Custom roles management
+    let customRoleCounter = 0;
+
+    function addCustomRole() {
+        customRoleCounter++;
+        const container = document.getElementById('customRolesContainer');
+        const roleDiv = document.createElement('div');
+        roleDiv.id = `customRole${customRoleCounter}`;
+        roleDiv.style.cssText = 'display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center;';
+        roleDiv.innerHTML = `
+            <input type="text" class="form-input custom-role-input" placeholder="e.g., Flag Bearer, Offertory..." style="flex: 1; padding: 0.5rem;">
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeCustomRole(${customRoleCounter})" style="padding: 0.5rem 0.75rem;">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        container.appendChild(roleDiv);
+    }
+
+    function removeCustomRole(id) {
+        const roleDiv = document.getElementById(`customRole${id}`);
+        if (roleDiv) roleDiv.remove();
+    }
+
+    function resetCustomRoles() {
+        document.getElementById('customRolesContainer').innerHTML = '';
+        customRoleCounter = 0;
+    }
+
+    function getCustomRoles() {
+        const inputs = document.querySelectorAll('.custom-role-input');
+        const roles = [];
+        inputs.forEach(input => {
+            const value = input.value.trim();
+            if (value) {
+                // Convert to snake_case for storage
+                roles.push(value.toLowerCase().replace(/\s+/g, '_'));
+            }
+        });
+        return roles;
+    }
+
+    // Add Mass Type
+    document.getElementById('addMassTypeForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        // Get standard roles
+        const standardRoles = ['introduction', 'first_reading', 'second_reading', 'prayer_of_faithful'];
+        
+        // Add third reading if checked
+        if (formData.get('has_third_reading') === 'on') {
+            standardRoles.splice(3, 0, 'third_reading'); // Insert before prayer_of_faithful
+        }
+        
+        // Get custom roles and add them
+        const customRoles = getCustomRoles();
+        const allRoles = [...standardRoles, ...customRoles];
+        
+        const data = {
+            name: formData.get('name'),
+            default_time: formData.get('default_time'),
+            description: formData.get('description'),
+            is_special_event: formData.get('is_special_event') === 'true',
+            required_roles: allRoles,
+            has_mc_reader: formData.get('has_mc_reader') === 'on',
+            has_gospel_narration: formData.get('has_gospel_narration') === 'on',
+            has_third_reading: formData.get('has_third_reading') === 'on',
+            has_apostles: formData.get('has_apostles') === 'on',
+            has_thanksgiving: formData.get('has_thanksgiving') === 'on',
+            has_carols: formData.get('has_carols') === 'on',
+            has_morning_adoration: formData.get('has_morning_adoration') === 'on',
+            has_departed_souls_reader: formData.get('has_departed_souls_reader') === 'on'
+        };
+
+        await api('/mass-types', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        hideModal('addMassTypeModal');
+        e.target.reset();
+        resetCustomRoles();
+        await loadData();
+    });
+
+    // Add Role
+    document.getElementById('addRoleForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        await api('/roles', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        hideModal('addRoleModal');
+        e.target.reset();
+        await loadData();
+    });
+
+    // Add Priest
+    document.getElementById('addPriestForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        await api('/priests', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        hideModal('addPriestModal');
+        e.target.reset();
+        await loadData();
+    });
+
+    // Edit Priest
+    document.getElementById('editPriestForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        const id = data.id;
+        delete data.id;
+
+        await api(`/priests/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+
+        hideModal('editPriestModal');
+        e.target.reset();
+        await loadData();
+    });
+</script>
+{% endblock %}
+

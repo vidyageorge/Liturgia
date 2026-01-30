@@ -1,0 +1,535 @@
+{% extends "base.html" %}
+
+{% block title %}Members{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Community Members</h2>
+    <p class="page-subtitle">Manage readers and liturgy participants</p>
+</div>
+
+<div class="card fade-in">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-users"></i> All Members 
+            <span id="memberCount" class="badge" style="background: white; color: var(--primary-burgundy); font-size: 0.85rem; font-weight: 600; margin-left: 0.75rem; padding: 0.4rem 0.8rem; border: 2px solid var(--primary-burgundy);"></span>
+        </h3>
+        <button class="btn btn-primary" onclick="showModal('addMemberModal')">
+            <i class="fas fa-user-plus"></i> Add Member
+        </button>
+    </div>
+    <div class="card-body">
+        <!-- Search Box -->
+        <div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
+            <div style="flex: 1; max-width: 400px; position: relative;">
+                <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <input type="text" id="memberSearch" class="form-input" placeholder="Search by name or phone..." 
+                    style="padding-left: 2.5rem;" oninput="filterMembers()">
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.85rem;">
+                <i class="fas fa-info-circle"></i> Reading count shows assignments for <strong id="currentYear"></strong>
+            </div>
+        </div>
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th style="text-align: center;">Readings This Year</th>
+                        <th style="text-align: center;">Experience</th>
+                        <th>Community Roles</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="members-body">
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <p>No members added yet</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal-overlay" id="addMemberModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-user-plus"></i> Add New Member</h3>
+            <button class="modal-close" onclick="hideModal('addMemberModal')">&times;</button>
+        </div>
+        <form id="addMemberForm">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Full Name *</label>
+                    <input type="text" class="form-input" name="name" required placeholder="Enter member's full name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" name="phone" placeholder="Enter phone number">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" name="email" placeholder="Enter email address">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="hideModal('addMemberModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Member
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit Member Modal -->
+<div class="modal-overlay" id="editMemberModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-user-edit"></i> Edit Member</h3>
+            <button class="modal-close" onclick="hideModal('editMemberModal')">&times;</button>
+        </div>
+        <form id="editMemberForm">
+            <input type="hidden" name="id" id="editMemberId">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Full Name *</label>
+                    <input type="text" class="form-input" name="name" id="editMemberName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" class="form-input" name="phone" id="editMemberPhone">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-input" name="email" id="editMemberEmail">
+                </div>
+                
+                <!-- Experience Settings -->
+                <div style="background: #F5EFE6; padding: 1rem; border-radius: 10px; margin-top: 1rem;">
+                    <label class="form-label" style="color: var(--primary-burgundy); margin-bottom: 0.75rem;">
+                        <i class="fas fa-star"></i> Experience Level
+                    </label>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                        Set manually for members from old database, or leave as "Auto" for automatic calculation
+                    </p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 0.85rem;">Experience</label>
+                            <select class="form-select" name="experience_level" id="editMemberExperience">
+                                <option value="">Auto (calculate)</option>
+                                <option value="new">🌟 New Reader</option>
+                                <option value="regular">📖 Regular Reader</option>
+                                <option value="experienced">⭐ Experienced Reader</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 0.85rem;">Years of Service</label>
+                            <input type="number" class="form-input" name="years_of_service" id="editMemberYears" 
+                                min="0" max="50" placeholder="e.g., 5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="hideModal('editMemberModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update Member
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Member History Modal -->
+<div class="modal-overlay" id="historyModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-history"></i> Reading History</h3>
+            <button class="modal-close" onclick="hideModal('historyModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <h4 id="historyMemberName" style="margin-bottom: 1rem; color: var(--dark-wood);"></h4>
+            <div id="historyContent">
+                <div class="empty-state">
+                    <i class="fas fa-book-reader"></i>
+                    <p>No reading history</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="hideModal('historyModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Role Modal -->
+<div class="modal-overlay" id="assignRoleModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-user-tag"></i> Assign Community Role</h3>
+            <button class="modal-close" onclick="hideModal('assignRoleModal')">&times;</button>
+        </div>
+        <form id="assignRoleForm">
+            <input type="hidden" name="member_id" id="assignRoleMemberId">
+            <div class="modal-body">
+                <h4 id="assignRoleMemberName" style="margin-bottom: 1rem; color: var(--dark-wood);"></h4>
+                <div class="form-group">
+                    <label class="form-label">Select Role</label>
+                    <select class="form-select" name="role_id" id="roleSelect" required>
+                        <option value="">-- Select a role --</option>
+                    </select>
+                </div>
+                <div id="currentRoles" style="margin-top: 1rem;">
+                    <h5 style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">Current Roles:</h5>
+                    <div id="currentRolesList"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="hideModal('assignRoleModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Assign Role
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let members = [];
+    let filteredMembers = [];
+    let roles = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        await loadMembers();
+        await loadRoles();
+    });
+
+    async function loadMembers() {
+        members = await api('/members');
+        filteredMembers = members;
+        renderMembers();
+        updateMemberCount();
+    }
+
+    async function loadRoles() {
+        roles = await api('/roles');
+        const roleSelect = document.getElementById('roleSelect');
+        roleSelect.innerHTML = '<option value="">-- Select a role --</option>' + 
+            roles.map(r => `<option value="${r.id}">${r.name} (${r.category})</option>`).join('');
+    }
+
+    function filterMembers() {
+        const searchTerm = document.getElementById('memberSearch').value.toLowerCase().trim();
+        
+        if (!searchTerm) {
+            filteredMembers = members;
+        } else {
+            filteredMembers = members.filter(m => 
+                m.name.toLowerCase().includes(searchTerm) ||
+                (m.phone && m.phone.includes(searchTerm)) ||
+                (m.email && m.email.toLowerCase().includes(searchTerm))
+            );
+        }
+        
+        renderMembers();
+        updateMemberCount();
+    }
+
+    function updateMemberCount() {
+        const countEl = document.getElementById('memberCount');
+        const total = members.length;
+        const showing = filteredMembers.length;
+        
+        if (showing === total) {
+            countEl.textContent = `${total} members`;
+        } else {
+            countEl.textContent = `${showing} of ${total}`;
+        }
+    }
+
+    function getReadingBadgeColor(count) {
+        if (count === 0) return 'background: #E0E0E0; color: #666;';
+        if (count <= 3) return 'background: #E8F5E9; color: #2E7D32;';
+        if (count <= 6) return 'background: #FFF3E0; color: #E65100;';
+        return 'background: #FCE4EC; color: #C2185B;';
+    }
+
+    function getExperienceInfo(member) {
+        const totalReadings = member.total_readings || 0;
+        const yearsOfService = member.years_of_service;
+        
+        // If manual experience_level is set, use it
+        if (member.experience_level) {
+            const yearsText = yearsOfService ? ` (${yearsOfService} years)` : '';
+            
+            if (member.experience_level === 'new') {
+                return {
+                    label: 'New',
+                    style: 'background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9;',
+                    icon: '🌟',
+                    tooltip: `New reader${yearsText}`
+                };
+            } else if (member.experience_level === 'experienced') {
+                return {
+                    label: 'Experienced',
+                    style: 'background: #F3E5F5; color: #7B1FA2; border: 1px solid #CE93D8;',
+                    icon: '⭐',
+                    tooltip: `Experienced reader${yearsText} - ${totalReadings} readings in app`
+                };
+            } else {
+                return {
+                    label: 'Regular',
+                    style: 'background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082;',
+                    icon: '📖',
+                    tooltip: `Regular reader${yearsText} - ${totalReadings} readings in app`
+                };
+            }
+        }
+        
+        // Auto-calculate based on app data
+        const createdAt = member.created_at ? new Date(member.created_at) : null;
+        const now = new Date();
+        const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        
+        // Check if new (added in last 3 months AND has less than 3 total readings)
+        const isNew = createdAt && createdAt > threeMonthsAgo && totalReadings < 3;
+        
+        if (isNew) {
+            return {
+                label: 'New',
+                style: 'background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9;',
+                icon: '🌟',
+                tooltip: `Joined ${member.member_since} (auto)`
+            };
+        } else if (totalReadings >= 10) {
+            return {
+                label: 'Experienced',
+                style: 'background: #F3E5F5; color: #7B1FA2; border: 1px solid #CE93D8;',
+                icon: '⭐',
+                tooltip: `${totalReadings} readings since ${member.member_since} (auto)`
+            };
+        } else {
+            return {
+                label: 'Regular',
+                style: 'background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082;',
+                icon: '📖',
+                tooltip: `${totalReadings} readings since ${member.member_since} (auto)`
+            };
+        }
+    }
+
+    function renderMembers() {
+        const tbody = document.getElementById('members-body');
+        
+        if (filteredMembers.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <p>${members.length === 0 ? 'No members added yet' : 'No members match your search'}</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = filteredMembers.map(m => {
+            const exp = getExperienceInfo(m);
+            return `
+                <tr>
+                    <td style="font-weight: 600;">${m.name}</td>
+                    <td>${m.phone || '-'}</td>
+                    <td style="text-align: center;">
+                        <span class="badge" style="${getReadingBadgeColor(m.reading_count || 0)} padding: 0.4rem 0.8rem; font-size: 0.9rem; border-radius: 20px;">
+                            ${m.reading_count || 0}
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="badge" style="${exp.style} padding: 0.35rem 0.6rem; font-size: 0.8rem; border-radius: 12px;" title="${exp.tooltip}">
+                            ${exp.icon} ${exp.label}
+                        </span>
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;">
+                            ${m.total_readings || 0} total
+                        </div>
+                    </td>
+                    <td>
+                        ${m.roles.length > 0 
+                            ? m.roles.map(r => `<span class="badge badge-burgundy" style="margin-right: 0.25rem;">${r}</span>`).join('') 
+                            : '<span style="color: var(--text-muted);">No roles</span>'}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="editMember(${m.id})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="showAssignRole(${m.id})" title="Assign Role">
+                            <i class="fas fa-user-tag"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="showHistory(${m.id})" title="History">
+                            <i class="fas fa-history"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteMember(${m.id})" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // Add Member
+    document.getElementById('addMemberForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+
+        await api('/members', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        hideModal('addMemberModal');
+        e.target.reset();
+        await loadMembers();
+    });
+
+    // Edit Member
+    function editMember(id) {
+        const member = members.find(m => m.id === id);
+        if (!member) return;
+
+        document.getElementById('editMemberId').value = member.id;
+        document.getElementById('editMemberName').value = member.name;
+        document.getElementById('editMemberPhone').value = member.phone || '';
+        document.getElementById('editMemberEmail').value = member.email || '';
+        document.getElementById('editMemberExperience').value = member.experience_level || '';
+        document.getElementById('editMemberYears').value = member.years_of_service || '';
+
+        showModal('editMemberModal');
+    }
+
+    document.getElementById('editMemberForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData);
+        const id = data.id;
+        delete data.id;
+
+        // Convert years_of_service to integer or null
+        if (data.years_of_service) {
+            data.years_of_service = parseInt(data.years_of_service);
+        } else {
+            data.years_of_service = null;
+        }
+
+        // Set experience_level to null if empty (for auto-calculation)
+        if (!data.experience_level) {
+            data.experience_level = null;
+        }
+
+        await api(`/members/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+
+        hideModal('editMemberModal');
+        await loadMembers();
+    });
+
+    // Delete Member
+    async function deleteMember(id) {
+        if (!confirm('Are you sure you want to remove this member?')) return;
+
+        await api(`/members/${id}`, {
+            method: 'DELETE'
+        });
+
+        await loadMembers();
+    }
+
+    // Show History
+    async function showHistory(id) {
+        const member = members.find(m => m.id === id);
+        if (!member) return;
+
+        document.getElementById('historyMemberName').textContent = member.name;
+
+        const history = await api(`/members/${id}/history`);
+        const content = document.getElementById('historyContent');
+
+        if (history.length === 0) {
+            content.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-book-reader"></i>
+                    <p>No reading history yet</p>
+                </div>
+            `;
+        } else {
+            content.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Mass Type</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${history.map(h => `
+                            <tr>
+                                <td>${formatDate(h.date)}</td>
+                                <td>${h.mass_type}</td>
+                                <td><span class="badge badge-gold">${formatRole(h.role)}</span></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        showModal('historyModal');
+    }
+
+    // Assign Role
+    function showAssignRole(id) {
+        const member = members.find(m => m.id === id);
+        if (!member) return;
+
+        document.getElementById('assignRoleMemberId').value = member.id;
+        document.getElementById('assignRoleMemberName').textContent = member.name;
+        document.getElementById('currentRolesList').innerHTML = member.roles.length > 0
+            ? member.roles.map(r => `<span class="badge badge-burgundy" style="margin-right: 0.5rem; margin-bottom: 0.25rem;">${r}</span>`).join('')
+            : '<span style="color: var(--text-muted);">No roles assigned</span>';
+
+        showModal('assignRoleModal');
+    }
+
+    document.getElementById('assignRoleForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const memberId = formData.get('member_id');
+        const roleId = formData.get('role_id');
+
+        await api(`/members/${memberId}/roles`, {
+            method: 'POST',
+            body: JSON.stringify({ role_id: parseInt(roleId) })
+        });
+
+        hideModal('assignRoleModal');
+        await loadMembers();
+    });
+</script>
+{% endblock %}
+

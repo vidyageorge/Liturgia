@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Welcome to Liturgia</h2>
+    <p class="page-subtitle">Sacred Ministry Roster Management System</p>
+</div>
+
+<!-- Stats Section -->
+<div class="grid grid-4" id="stats-container" style="margin-bottom: 2rem;">
+    <div class="stat-card fade-in" style="animation-delay: 0.1s">
+        <div class="stat-icon gold">
+            <i class="fas fa-users"></i>
+        </div>
+        <div>
+            <div class="stat-value" id="total-members">0</div>
+            <div class="stat-label">Active Members</div>
+        </div>
+    </div>
+    <div class="stat-card fade-in" style="animation-delay: 0.2s">
+        <div class="stat-icon burgundy">
+            <i class="fas fa-church"></i>
+        </div>
+        <div>
+            <div class="stat-value" id="total-masses">0</div>
+            <div class="stat-label">Total Masses</div>
+        </div>
+    </div>
+    <div class="stat-card fade-in" style="animation-delay: 0.3s">
+        <div class="stat-icon blue">
+            <i class="fas fa-calendar-check"></i>
+        </div>
+        <div>
+            <div class="stat-value" id="upcoming-masses">0</div>
+            <div class="stat-label">Upcoming Masses</div>
+        </div>
+    </div>
+    <div class="stat-card fade-in" style="animation-delay: 0.4s">
+        <div class="stat-icon purple">
+            <i class="fas fa-star"></i>
+        </div>
+        <div>
+            <div class="stat-value" id="special-events">0</div>
+            <div class="stat-label">Special Events</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <!-- Upcoming Masses -->
+    <div class="card fade-in" style="animation-delay: 0.5s">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-calendar-alt"></i> Upcoming Masses</h3>
+            <a href="/schedule" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Schedule
+            </a>
+        </div>
+        <div class="card-body">
+            <div id="upcoming-list">
+                <div class="empty-state">
+                    <i class="fas fa-calendar"></i>
+                    <p>No upcoming masses scheduled</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Volunteers -->
+    <div class="card fade-in" style="animation-delay: 0.6s">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-trophy"></i> Top Volunteers</h3>
+            <a href="/members" class="btn btn-primary btn-sm">
+                <i class="fas fa-users"></i> All Members
+            </a>
+        </div>
+        <div class="card-body">
+            <div id="top-volunteers-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="empty-state">
+                    <i class="fas fa-award"></i>
+                    <p>Loading top volunteers...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Mass Records -->
+<div class="card fade-in" style="margin-top: 2rem; animation-delay: 0.7s">
+    <div class="card-header">
+        <h3 class="card-title"><i class="fas fa-history"></i> Recent Mass Records</h3>
+        <a href="/masses" class="btn btn-primary btn-sm">View All</a>
+    </div>
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table" id="recent-masses-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Mass Type</th>
+                        <th>Time</th>
+                        <th>Celebrant</th>
+                        <th>Readers Assigned</th>
+                    </tr>
+                </thead>
+                <tbody id="recent-masses-body">
+                    <tr>
+                        <td colspan="5" class="empty-state">
+                            <i class="fas fa-church"></i>
+                            <p>No mass records yet</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Load stats
+        const stats = await api('/stats');
+        document.getElementById('total-members').textContent = stats.total_members;
+        document.getElementById('total-masses').textContent = stats.total_masses;
+        document.getElementById('upcoming-masses').textContent = stats.upcoming_masses;
+
+        // Load mass types
+        const massTypes = await api('/mass-types');
+        const specialCount = massTypes.filter(mt => mt.is_special_event).length;
+        document.getElementById('special-events').textContent = specialCount;
+
+        // Load top volunteers
+        const topVolunteersList = document.getElementById('top-volunteers-list');
+        if (stats.top_volunteers && stats.top_volunteers.length > 0) {
+            topVolunteersList.innerHTML = stats.top_volunteers.map((volunteer, index) => {
+                const medals = ['🥇', '🥈', '🥉'];
+                const colors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+                return `
+                    <div style="display: flex; align-items: center; padding: 1rem; background: ${index === 0 ? '#FFF9E6' : index === 1 ? '#F5F5F5' : '#FFF5E6'}; border-radius: 8px; border-left: 4px solid ${colors[index]};">
+                        <div style="font-size: 2rem; margin-right: 1rem;">${medals[index]}</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--dark-wood); font-size: 1.05rem;">
+                                ${volunteer.name}
+                            </div>
+                            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+                                <i class="fas fa-book-reader"></i> ${volunteer.reading_count} reading${volunteer.reading_count !== 1 ? 's' : ''}
+                            </div>
+                        </div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: ${colors[index]};">
+                            #${index + 1}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            topVolunteersList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-award"></i>
+                    <p>No volunteers yet</p>
+                </div>
+            `;
+        }
+
+        // Load upcoming masses
+        const upcoming = await api('/masses/upcoming');
+        const upcomingList = document.getElementById('upcoming-list');
+        
+        if (upcoming.length > 0) {
+            upcomingList.innerHTML = upcoming.slice(0, 5).map(mass => `
+                <div style="padding: 1rem; border-bottom: 1px solid #E0D6C8; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; color: var(--dark-wood);">
+                            ${mass.mass_type ? mass.mass_type.name : 'Mass'}
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">
+                            <i class="fas fa-calendar"></i> ${formatDate(mass.date)}
+                            ${mass.time ? `<i class="fas fa-clock" style="margin-left: 0.75rem;"></i> ${mass.time}` : ''}
+                        </div>
+                    </div>
+                    <span class="badge badge-blue">${mass.assignments.length} assigned</span>
+                </div>
+            `).join('');
+        }
+
+        // Load recent masses
+        const recent = await api('/masses/past');
+        const recentBody = document.getElementById('recent-masses-body');
+        
+        if (recent.length > 0) {
+            recentBody.innerHTML = recent.slice(0, 5).map(mass => `
+                <tr>
+                    <td>${formatDate(mass.date)}</td>
+                    <td>${mass.mass_type ? mass.mass_type.name : '-'}</td>
+                    <td>${mass.time || '-'}</td>
+                    <td>${mass.celebrant || '-'}</td>
+                    <td><span class="badge badge-gold">${mass.assignments.length} readers</span></td>
+                </tr>
+            `).join('');
+        }
+    });
+</script>
+{% endblock %}
+

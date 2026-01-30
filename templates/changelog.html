@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Change Log{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Change Log</h2>
+    <p class="page-subtitle">Track all modifications to mass records</p>
+</div>
+
+<div class="card fade-in">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-history"></i> Recent Changes
+            <span id="changeCount" class="badge" style="background: white; color: var(--primary-burgundy); font-size: 0.85rem; font-weight: 600; margin-left: 0.75rem; padding: 0.4rem 0.8rem; border: 2px solid var(--primary-burgundy);"></span>
+        </h3>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <select id="fieldFilter" class="form-select" style="width: 220px;" onchange="filterChanges()">
+                <option value="">All Fields</option>
+                <optgroup label="Mass Details">
+                    <option value="mass_type">Mass Type</option>
+                    <option value="date">Date</option>
+                    <option value="time">Time</option>
+                    <option value="celebrant">Celebrant</option>
+                    <option value="notes">Notes</option>
+                </optgroup>
+                <optgroup label="Reader Assignments">
+                    <option value="_reader">All Reader Changes</option>
+                </optgroup>
+            </select>
+            <select id="limitFilter" class="form-select" style="width: 150px;" onchange="loadChanges()">
+                <option value="50">Last 50</option>
+                <option value="100">Last 100</option>
+                <option value="200">Last 200</option>
+                <option value="all">All Changes</option>
+            </select>
+        </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div style="overflow-x: auto;">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 150px;">Changed At</th>
+                        <th style="min-width: 150px;">Mass Date</th>
+                        <th style="min-width: 120px;">Mass Type</th>
+                        <th style="min-width: 120px;">Field Changed</th>
+                        <th style="min-width: 150px;">Old Value</th>
+                        <th style="min-width: 150px;">New Value</th>
+                        <th style="min-width: 100px;">Changed By</th>
+                        <th style="min-width: 250px;">Reason</th>
+                        <th style="width: 100px; text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="changelog-body">
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 3rem;">
+                            <div class="empty-state">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading changes...</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let allChanges = [];
+    let filteredChanges = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadChanges();
+    });
+
+    async function loadChanges() {
+        const limit = document.getElementById('limitFilter').value;
+        const url = limit === 'all' ? '/changelog' : `/changelog?limit=${limit}`;
+        
+        try {
+            allChanges = await api(url);
+            filteredChanges = allChanges;
+            filterChanges();
+        } catch (error) {
+            console.error('Error loading changes:', error);
+            document.getElementById('changelog-body').innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 3rem;">
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+                            <p>Error loading changes. Please try again.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    function filterChanges() {
+        const fieldFilter = document.getElementById('fieldFilter').value;
+        
+        if (!fieldFilter) {
+            filteredChanges = allChanges;
+        } else if (fieldFilter === '_reader') {
+            // Filter for all reader assignment changes
+            filteredChanges = allChanges.filter(c => c.field_changed.includes('_reader'));
+        } else {
+            filteredChanges = allChanges.filter(c => c.field_changed === fieldFilter);
+        }
+        
+        renderChanges();
+        updateChangeCount();
+    }
+
+    function updateChangeCount() {
+        const countEl = document.getElementById('changeCount');
+        const total = allChanges.length;
+        const showing = filteredChanges.length;
+        
+        if (showing === total) {
+            countEl.textContent = `${total} changes`;
+        } else {
+            countEl.textContent = `${showing} of ${total}`;
+        }
+    }
+
+    function renderChanges() {
+        const tbody = document.getElementById('changelog-body');
+        
+        if (filteredChanges.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 3rem;">
+                        <div class="empty-state">
+                            <i class="fas fa-info-circle"></i>
+                            <p>No changes recorded yet</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = filteredChanges.map(change => {
+            const fieldBadgeColors = {
+                'mass_type': 'background: #E3F2FD; color: #1565C0;',
+                'date': 'background: #FCE4EC; color: #C2185B;',
+                'time': 'background: #FFF3E0; color: #E65100;',
+                'celebrant': 'background: #F3E5F5; color: #7B1FA2;',
+                'notes': 'background: #E8F5E9; color: #2E7D32;'
+            };
+            
+            // Reader assignments get a distinct yellow/gold color
+            let badgeStyle = fieldBadgeColors[change.field_changed];
+            if (!badgeStyle && change.field_changed.includes('_reader')) {
+                badgeStyle = 'background: #FFF9E6; color: #C9A227; border: 1px solid #C9A227;';
+            }
+            if (!badgeStyle) {
+                badgeStyle = 'background: #F5F5F5; color: #666;';
+            }
+            
+            return `
+                <tr style="border-bottom: 1px solid #E0D6C8;">
+                    <td style="font-size: 0.9rem; color: var(--text-muted);">
+                        ${formatDateTime(change.changed_at)}
+                    </td>
+                    <td style="font-weight: 600;">
+                        ${change.mass_date ? formatDate(change.mass_date) : '-'}
+                    </td>
+                    <td>
+                        <span class="badge" style="background: var(--primary-burgundy); color: white; font-size: 0.8rem;">
+                            ${change.mass_type || 'Unknown'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge" style="${badgeStyle} font-size: 0.8rem; padding: 0.4rem 0.6rem;">
+                            ${formatFieldName(change.field_changed)}
+                        </span>
+                    </td>
+                    <td style="color: #999; text-decoration: line-through; font-size: 0.9rem;">
+                        ${formatValue(change.old_value) || '(empty)'}
+                    </td>
+                    <td style="color: #28a745; font-weight: 600; font-size: 0.9rem;">
+                        ${formatValue(change.new_value) || '(empty)'}
+                    </td>
+                    <td style="font-size: 0.85rem;">
+                        ${change.changed_by || 'System'}
+                    </td>
+                    <td style="font-size: 0.9rem; font-style: italic; max-width: 300px;">
+                        ${change.change_reason || '-'}
+                    </td>
+                    <td style="text-align: center;">
+                        <button class="btn btn-sm btn-outline" onclick="viewMassDetails(${change.mass_id})" title="View Mass">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function formatDateTime(datetime) {
+        const date = new Date(datetime);
+        return date.toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: '2-digit', 
+            minute: '2-digit'
+        });
+    }
+
+    function formatFieldName(field) {
+        const fieldNames = {
+            'mass_type': 'Mass Type',
+            'date': 'Date',
+            'time': 'Time',
+            'celebrant': 'Celebrant',
+            'notes': 'Notes',
+            'introduction_reader': 'Introduction',
+            'first_reading_reader': 'First Reading',
+            'second_reading_reader': 'Second Reading',
+            'third_reading_reader': 'Third Reading',
+            'prayer_of_faithful_reader': 'Prayer of Faithful',
+            'mc_reader_reader': 'MC Reader'
+        };
+        return fieldNames[field] || field.replace('_reader', '').replace(/_/g, ' ');
+    }
+
+    function formatValue(value) {
+        if (!value || value === 'null' || value === 'None' || value === '') return null;
+        // Remove JSON quotes if present
+        try {
+            const parsed = JSON.parse(value);
+            return parsed || null;
+        } catch {
+            return value;
+        }
+    }
+
+    function viewMassDetails(massId) {
+        // Redirect to mass history page
+        window.location.href = `/masses?highlight=${massId}`;
+    }
+</script>
+{% endblock %}

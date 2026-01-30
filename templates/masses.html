@@ -1,0 +1,1158 @@
+{% extends "base.html" %}
+
+{% block title %}Mass History{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .mass-card {
+        background: var(--soft-white);
+        border-radius: 16px;
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        transition: var(--transition);
+    }
+
+    .mass-card:hover {
+        box-shadow: var(--shadow-medium);
+    }
+
+    .mass-card-header {
+        background: linear-gradient(135deg, var(--primary-burgundy) 0%, var(--deep-purple) 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .mass-card-header.special {
+        background: linear-gradient(135deg, var(--primary-gold) 0%, #B8860B 100%);
+        color: var(--dark-wood);
+    }
+
+    .mass-card-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .mass-card-date {
+        opacity: 0.9;
+        font-size: 0.9rem;
+    }
+
+    .mass-card-body {
+        padding: 1.5rem;
+    }
+
+    .assignment-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .assignment-item {
+        background: #F5EFE6;
+        padding: 1rem;
+        border-radius: 10px;
+        border-left: 4px solid var(--primary-gold);
+    }
+
+    .assignment-role {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .assignment-name {
+        font-weight: 600;
+        color: var(--dark-wood);
+    }
+
+    .filter-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-tab {
+        padding: 0.75rem 1.5rem;
+        border: 2px solid var(--primary-burgundy);
+        border-radius: 8px;
+        background: white;
+        color: var(--primary-burgundy);
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .filter-tab:hover,
+    .filter-tab.active {
+        background: var(--primary-burgundy);
+        color: white;
+    }
+
+    .apostles-section {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 2px dashed #E0D6C8;
+    }
+
+    .apostles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .apostle-chip {
+        background: linear-gradient(135deg, rgba(201, 162, 39, 0.15) 0%, rgba(114, 47, 55, 0.1) 100%);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        border: 1px solid rgba(201, 162, 39, 0.3);
+    }
+
+    .apostle-chip-name {
+        font-weight: 600;
+        color: var(--dark-wood);
+    }
+
+    .apostle-chip-member {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+    }
+
+    /* Table View Styles */
+    .table-view-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--shadow-soft);
+        overflow: hidden;
+        display: none;
+    }
+
+    .table-view-container.active {
+        display: block;
+    }
+
+    .excel-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+    .excel-table thead {
+        background: linear-gradient(135deg, var(--primary-burgundy) 0%, var(--deep-purple) 100%);
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .excel-table th {
+        padding: 1rem 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .excel-table th:last-child {
+        border-right: none;
+    }
+
+    .excel-table tbody tr {
+        border-bottom: 1px solid #E0D6C8;
+        transition: background 0.2s;
+    }
+
+    .excel-table tbody tr:hover {
+        background: #F5EFE6;
+        cursor: pointer;
+    }
+
+    .excel-table tbody tr.special-event {
+        background: rgba(201, 162, 39, 0.05);
+    }
+
+    .excel-table tbody tr.special-event:hover {
+        background: rgba(201, 162, 39, 0.1);
+    }
+
+    .excel-table td {
+        padding: 0.875rem 0.75rem;
+        border-right: 1px solid #F0EBE3;
+        vertical-align: top;
+    }
+
+    .excel-table td:last-child {
+        border-right: none;
+    }
+
+    .excel-table td.date-cell {
+        font-weight: 600;
+        color: var(--dark-wood);
+        white-space: nowrap;
+    }
+
+    .excel-table td.mass-type-cell {
+        font-weight: 500;
+    }
+
+    .excel-table td.reader-cell {
+        color: var(--text-muted);
+    }
+
+    .table-scroll {
+        overflow-x: auto;
+        max-height: calc(100vh - 300px);
+        overflow-y: auto;
+    }
+
+    .card-view-container {
+        display: block;
+    }
+
+    .card-view-container.inactive {
+        display: none;
+    }
+
+    .btn-outline.active {
+        background: var(--primary-burgundy);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2 class="page-title">Mass History</h2>
+    <p class="page-subtitle">View past mass records and reader assignments</p>
+</div>
+
+<!-- Filter Tabs and Year Filter -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div class="filter-tabs">
+        <button class="filter-tab" onclick="filterMasses('all')">All Masses</button>
+        <button class="filter-tab" onclick="filterMasses('upcoming')">Upcoming</button>
+        <button class="filter-tab active" onclick="filterMasses('past')">Past</button>
+    </div>
+    
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <label style="font-weight: 500; color: var(--dark-wood);">Year:</label>
+        <select id="yearFilter" class="form-select" style="width: auto; min-width: 120px;" onchange="onYearFilterChange()">
+            <option value="all">All Years</option>
+        </select>
+    </div>
+</div>
+
+<!-- View Toggle -->
+<div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+    <div style="display: flex; gap: 0.5rem;">
+        <button class="btn btn-outline" id="cardViewBtn" onclick="switchView('card')">
+            <i class="fas fa-th-large"></i> Card View
+        </button>
+        <button class="btn btn-outline" id="tableViewBtn" onclick="switchView('table')">
+            <i class="fas fa-table"></i> Table View
+        </button>
+    </div>
+    
+    <div style="display: flex; gap: 1rem;">
+        <a href="/schedule" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Schedule New Mass
+        </a>
+        <button class="btn btn-secondary" onclick="exportToExcel()">
+            <i class="fas fa-file-excel"></i> Export to Excel
+        </button>
+    </div>
+</div>
+
+<!-- Masses List (Card View) -->
+<div id="massesContainer" class="card-view-container">
+    <div class="empty-state">
+        <i class="fas fa-church"></i>
+        <p>Loading masses...</p>
+    </div>
+</div>
+
+<!-- Table View -->
+<div id="tableViewContainer" class="table-view-container">
+    <div class="table-scroll">
+        <table class="excel-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Day</th>
+                    <th>Mass Type</th>
+                    <th>Time</th>
+                    <th>Celebrant</th>
+                    <th>Introduction</th>
+                    <th>First Reading</th>
+                    <th>Second Reading</th>
+                    <th>Prayer of Faithful</th>
+                    <th>MC Reader</th>
+                    <th>Third Reading</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="12" style="text-align: center; padding: 2rem;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- View Mass Modal -->
+<div class="modal-overlay" id="viewMassModal">
+    <div class="modal" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="viewMassTitle"><i class="fas fa-church"></i> Mass Details</h3>
+            <button class="modal-close" onclick="hideModal('viewMassModal')">&times;</button>
+        </div>
+        <div class="modal-body" id="viewMassContent">
+            <!-- Content will be populated dynamically -->
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="editMassFromView()">
+                <i class="fas fa-edit"></i> Edit Mass
+            </button>
+            <button type="button" class="btn btn-outline" onclick="hideModal('viewMassModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Mass Modal -->
+<div class="modal-overlay" id="editMassModal">
+    <div class="modal" style="max-width: 900px; max-height: 90vh;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="editMassTitle"><i class="fas fa-edit"></i> Edit Mass</h3>
+            <button class="modal-close" onclick="hideModal('editMassModal')">&times;</button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <input type="hidden" id="editMassId">
+            
+            <!-- Mass Details -->
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" id="editMassDate">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Time</label>
+                    <input type="text" class="form-input" id="editMassTime" placeholder="e.g., 7:15 AM">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Celebrant</label>
+                    <input type="text" class="form-input" id="editMassCelebrant" placeholder="Priest name">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">Notes</label>
+                    <input type="text" class="form-input" id="editMassNotes" placeholder="Any notes...">
+                </div>
+            </div>
+            
+            <!-- Change Reason (Required) -->
+            <div style="background: #ffe6e6; padding: 1rem; border-radius: 8px; border-left: 4px solid #dc3545; margin-bottom: 1.5rem;">
+                <label class="form-label" style="color: #dc3545; font-weight: 600;">
+                    <i class="fas fa-exclamation-circle"></i> Reason for Change * (Required)
+                </label>
+                <textarea class="form-textarea" id="editChangeReason" 
+                    style="min-height: 80px; border: 2px solid #dc3545; margin-top: 0.5rem;" 
+                    placeholder="Please explain why you are making these changes..." 
+                    required></textarea>
+                <small style="color: #666; font-size: 0.85rem;">
+                    <i class="fas fa-history"></i> This will be logged in the change history for audit purposes
+                </small>
+            </div>
+
+            <!-- Reader Assignments -->
+            <h4 style="color: var(--dark-wood); margin-bottom: 1rem;"><i class="fas fa-user-check"></i> Reader Assignments</h4>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                <i class="fas fa-info-circle"></i> Update reader assignments if someone was replaced
+            </p>
+            <div id="editAssignmentsContainer">
+                <!-- Will be populated dynamically -->
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="viewMassHistory()">
+                <i class="fas fa-history"></i> View Change History
+            </button>
+            <button type="button" class="btn btn-outline" onclick="hideModal('editMassModal')">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveEditedMass()">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Change History Modal -->
+<div class="modal-overlay" id="historyModal">
+    <div class="modal" style="max-width: 800px;">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fas fa-history"></i> Mass Change History</h3>
+            <button class="modal-close" onclick="hideModal('historyModal')">&times;</button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+            <div id="historyContent">
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading history...</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="hideModal('historyModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let allMasses = [];
+    let members = [];
+    let currentFilter = 'past';
+    let selectedMassId = null;
+    let selectedYear = 'all';
+    let currentView = 'card'; // 'card' or 'table'
+
+    // Define the standard role order
+    const roleOrder = [
+        'mc_reader',
+        'carols',
+        'thanksgiving',
+        'introduction',
+        'first_reading',
+        'second_reading',
+        'third_reading',
+        'gospel_narration',
+        'prayer_of_faithful',
+        'departed_souls_reader'
+    ];
+
+    function sortAssignments(assignments) {
+        return [...assignments].sort((a, b) => {
+            const indexA = roleOrder.indexOf(a.role);
+            const indexB = roleOrder.indexOf(b.role);
+            // If role not found in order, put it at the end
+            const orderA = indexA === -1 ? 999 : indexA;
+            const orderB = indexB === -1 ? 999 : indexB;
+            return orderA - orderB;
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        members = await api('/members');
+        await loadMasses();
+        populateYearFilter();
+        
+        // Set default view to table
+        switchView('table');
+    });
+
+    async function loadMasses() {
+        const masses = await api('/masses');
+        allMasses = masses;
+        renderMasses();
+    }
+
+    function populateYearFilter() {
+        const years = new Set();
+        allMasses.forEach(mass => {
+            const year = new Date(mass.date).getFullYear();
+            years.add(year);
+        });
+        
+        const yearFilter = document.getElementById('yearFilter');
+        const currentYear = new Date().getFullYear();
+        
+        yearFilter.innerHTML = '<option value="all">All Years</option>' +
+            Array.from(years).sort((a, b) => b - a).map(year => 
+                `<option value="${year}" ${year === currentYear ? 'selected' : ''}>${year}</option>`
+            ).join('');
+        
+        // Set selected year to current year by default
+        selectedYear = currentYear.toString();
+        yearFilter.value = selectedYear;
+    }
+
+    function onYearFilterChange() {
+        selectedYear = document.getElementById('yearFilter').value;
+        renderMasses();
+    }
+
+    function filterMasses(filter) {
+        currentFilter = filter;
+        
+        // Update tab styles
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        renderMasses();
+    }
+
+    function renderMasses() {
+        if (currentView === 'table') {
+            renderTableView();
+        } else {
+            renderCardView();
+        }
+    }
+
+    function switchView(view) {
+        currentView = view;
+        
+        const cardViewBtn = document.getElementById('cardViewBtn');
+        const tableViewBtn = document.getElementById('tableViewBtn');
+        const cardContainer = document.getElementById('massesContainer');
+        const tableContainer = document.getElementById('tableViewContainer');
+        
+        if (view === 'table') {
+            cardViewBtn.classList.remove('active');
+            tableViewBtn.classList.add('active');
+            cardContainer.classList.add('inactive');
+            tableContainer.classList.add('active');
+        } else {
+            cardViewBtn.classList.add('active');
+            tableViewBtn.classList.remove('active');
+            cardContainer.classList.remove('inactive');
+            tableContainer.classList.remove('active');
+        }
+        
+        renderMasses();
+    }
+
+    function renderTableView() {
+        const tbody = document.getElementById('tableBody');
+        const today = new Date().toISOString().split('T')[0];
+        
+        let filtered = [...allMasses];
+        
+        // Filter by status (upcoming/past/all)
+        if (currentFilter === 'upcoming') {
+            filtered = filtered.filter(m => m.date >= today);
+        } else if (currentFilter === 'past') {
+            filtered = filtered.filter(m => m.date < today);
+        }
+        
+        // Filter by year
+        if (selectedYear !== 'all') {
+            filtered = filtered.filter(m => {
+                const massYear = new Date(m.date).getFullYear();
+                return massYear.toString() === selectedYear;
+            });
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="12" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                        <i class="fas fa-church" style="font-size: 2rem; margin-bottom: 1rem; display: block; opacity: 0.3;"></i>
+                        No masses found for ${selectedYear !== 'all' ? selectedYear : 'this filter'}
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(mass => {
+            const isSpecial = mass.mass_type && mass.mass_type.is_special_event;
+            const assignments = mass.assignments || [];
+            
+            // Group assignments by role
+            const assignmentMap = {};
+            assignments.forEach(a => {
+                const readerName = a.member ? a.member.name : a.member_name || '';
+                if (!assignmentMap[a.role]) {
+                    assignmentMap[a.role] = [];
+                }
+                assignmentMap[a.role].push(readerName);
+            });
+
+            const date = new Date(mass.date);
+            const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+            
+            return `
+                <tr class="${isSpecial ? 'special-event' : ''}" onclick="viewMass(${mass.id})">
+                    <td class="date-cell">${mass.date}</td>
+                    <td>${dayName}</td>
+                    <td class="mass-type-cell">${mass.mass_type ? mass.mass_type.name : 'Mass'}</td>
+                    <td>${mass.time || ''}</td>
+                    <td>${mass.celebrant || ''}</td>
+                    <td class="reader-cell">${assignmentMap['introduction'] ? assignmentMap['introduction'].join(', ') : ''}</td>
+                    <td class="reader-cell">${assignmentMap['first_reading'] ? assignmentMap['first_reading'].join(', ') : ''}</td>
+                    <td class="reader-cell">${assignmentMap['second_reading'] ? assignmentMap['second_reading'].join(', ') : ''}</td>
+                    <td class="reader-cell">${assignmentMap['prayer_of_faithful'] ? assignmentMap['prayer_of_faithful'].join(', ') : ''}</td>
+                    <td class="reader-cell">${assignmentMap['mc_reader'] ? assignmentMap['mc_reader'].join(', ') : ''}</td>
+                    <td class="reader-cell">${assignmentMap['third_reading'] ? assignmentMap['third_reading'].join(', ') : ''}</td>
+                    <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${mass.notes || ''}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function renderCardView() {
+        const container = document.getElementById('massesContainer');
+        const today = new Date().toISOString().split('T')[0];
+        
+        let filtered = [...allMasses];
+        
+        // Filter by status (upcoming/past/all)
+        if (currentFilter === 'upcoming') {
+            filtered = filtered.filter(m => m.date >= today);
+        } else if (currentFilter === 'past') {
+            filtered = filtered.filter(m => m.date < today);
+        }
+        
+        // Filter by year
+        if (selectedYear !== 'all') {
+            filtered = filtered.filter(m => {
+                const massYear = new Date(m.date).getFullYear();
+                return massYear.toString() === selectedYear;
+            });
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-church"></i>
+                    <p>No masses found for ${selectedYear !== 'all' ? selectedYear : 'this filter'}</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = filtered.map(mass => {
+            const isSpecial = mass.mass_type && mass.mass_type.is_special_event;
+            const isPast = mass.date < today;
+            
+            return `
+                <div class="mass-card fade-in" onclick="viewMass(${mass.id})">
+                    <div class="mass-card-header ${isSpecial ? 'special' : ''}">
+                        <div>
+                            <div class="mass-card-title">
+                                ${mass.mass_type ? mass.mass_type.name : 'Mass'}
+                                ${isPast ? '<span class="badge" style="background: rgba(255,255,255,0.3); margin-left: 0.5rem;">Past</span>' : ''}
+                            </div>
+                            <div class="mass-card-date">
+                                <i class="fas fa-calendar"></i> ${formatDate(mass.date)}
+                                ${mass.time ? `<span style="margin-left: 1rem;"><i class="fas fa-clock"></i> ${mass.time}</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            ${mass.celebrant ? `<div style="font-size: 0.9rem;"><i class="fas fa-user"></i> ${mass.celebrant}</div>` : ''}
+                            <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.25rem;">
+                                ${mass.assignments.length} reader(s) assigned
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mass-card-body">
+                        ${mass.assignments.length > 0 ? `
+                            <div class="assignment-list">
+                                ${sortAssignments(mass.assignments).map(a => `
+                                    <div class="assignment-item">
+                                        <div class="assignment-role">${formatRole(a.role)}</div>
+                                        <div class="assignment-name">${a.member_name || 'Not assigned'}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : '<p style="color: var(--text-muted);">No readers assigned yet</p>'}
+                        
+                        ${mass.apostles && mass.apostles.length > 0 ? `
+                            <div class="apostles-section">
+                                <h4 style="color: var(--dark-wood); margin-bottom: 1rem;">
+                                    <i class="fas fa-users"></i> 12 Apostles
+                                </h4>
+                                <div class="apostles-grid">
+                                    ${mass.apostles.map(a => `
+                                        <div class="apostle-chip">
+                                            <div class="apostle-chip-name">${a.apostle_name}</div>
+                                            <div class="apostle-chip-member">${a.member_name || 'Not assigned'}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function viewMass(id) {
+        selectedMassId = id;
+        const mass = allMasses.find(m => m.id === id);
+        if (!mass) return;
+
+        document.getElementById('viewMassTitle').innerHTML = `
+            <i class="fas fa-church"></i> ${mass.mass_type ? mass.mass_type.name : 'Mass'}
+        `;
+
+        const mt = mass.mass_type || {};
+
+        document.getElementById('viewMassContent').innerHTML = `
+            <div style="background: #F5EFE6; padding: 1.25rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">Date</div>
+                        <div style="font-weight: 600;">${formatDate(mass.date)}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">Time</div>
+                        <div style="font-weight: 600;">${mass.time || '-'}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">Celebrant</div>
+                        <div style="font-weight: 600;">${mass.celebrant || '-'}</div>
+                    </div>
+                </div>
+                ${mass.notes ? `
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #E0D6C8;">
+                        <div style="font-size: 0.85rem; color: var(--text-muted);">Notes</div>
+                        <div>${mass.notes}</div>
+                    </div>
+                ` : ''}
+            </div>
+
+            <h4 style="color: var(--dark-wood); margin-bottom: 1rem;">
+                <i class="fas fa-user-check"></i> Reader Assignments
+            </h4>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Reader(s)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${getExpectedRoles(mt).map(role => {
+                            // Get ALL assignments for this role (supports multiple readers)
+                            const assignmentsForRole = mass.assignments.filter(a => a.role === role);
+                            const readerNames = assignmentsForRole.map(a => a.member_name).filter(n => n);
+                            return `
+                                <tr>
+                                    <td><strong>${formatRole(role)}</strong></td>
+                                    <td>${readerNames.length > 0 
+                                        ? readerNames.map(name => `<span class="badge badge-gold" style="margin-right: 0.25rem; margin-bottom: 0.25rem;">${name}</span>`).join('') 
+                                        : '<span style="color: var(--text-muted);">Not assigned</span>'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            ${mass.apostles && mass.apostles.length > 0 ? `
+                <div style="margin-top: 2rem;">
+                    <h4 style="color: var(--dark-wood); margin-bottom: 1rem;">
+                        <i class="fas fa-users"></i> 12 Apostles
+                    </h4>
+                    <div class="apostles-grid">
+                        ${mass.apostles.map(a => `
+                            <div class="apostle-chip">
+                                <div class="apostle-chip-name">${a.apostle_name}</div>
+                                <div class="apostle-chip-member">${a.member_name || 'Not assigned'}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+        `;
+
+        showModal('viewMassModal');
+    }
+
+    function getExpectedRoles(massType) {
+        const roles = [];
+        
+        // Add special roles at the beginning (in consistent order)
+        if (massType.has_mc_reader) roles.push('mc_reader');
+        if (massType.has_carols) roles.push('carols');
+        if (massType.has_thanksgiving) roles.push('thanksgiving');
+        
+        // Standard reading roles in proper order
+        roles.push('introduction', 'first_reading', 'second_reading');
+        if (massType.has_third_reading) roles.push('third_reading');
+        if (massType.has_gospel_narration) roles.push('gospel_narration');
+        roles.push('prayer_of_faithful');
+        
+        // Add any custom roles from required_roles that aren't already included
+        if (massType.required_roles && massType.required_roles.length > 0) {
+            massType.required_roles.forEach(role => {
+                if (!roles.includes(role)) {
+                    roles.push(role);
+                }
+            });
+        }
+        
+        // Add departed souls reader at the end if applicable
+        if (massType.has_departed_souls_reader && !roles.includes('departed_souls_reader')) {
+            roles.push('departed_souls_reader');
+        }
+        
+        return roles;
+    }
+
+    // Edit Mass Functions
+    let editingMass = null;
+    let editAssignments = {};
+
+    function editMassFromView() {
+        if (!selectedMassId) return;
+        hideModal('viewMassModal');
+        editMass(selectedMassId);
+    }
+
+    function editMass(massId) {
+        editingMass = allMasses.find(m => m.id === massId);
+        if (!editingMass) return;
+
+        editAssignments = {};
+
+        // Populate form fields
+        document.getElementById('editMassId').value = editingMass.id;
+        document.getElementById('editMassTitle').innerHTML = `<i class="fas fa-edit"></i> Edit: ${editingMass.mass_type ? editingMass.mass_type.name : 'Mass'}`;
+        document.getElementById('editMassDate').value = editingMass.date;
+        document.getElementById('editMassTime').value = editingMass.time || '';
+        document.getElementById('editMassCelebrant').value = editingMass.celebrant || '';
+        document.getElementById('editMassNotes').value = editingMass.notes || '';
+
+        // Render assignments
+        renderEditAssignments();
+
+        showModal('editMassModal');
+    }
+
+    function renderEditAssignments() {
+        const mt = editingMass.mass_type || {};
+        const roles = getExpectedRoles(mt);
+
+        const container = document.getElementById('editAssignmentsContainer');
+        container.innerHTML = roles.map(role => {
+            // Get all existing assignments for this role
+            const existingForRole = editingMass.assignments.filter(a => a.role === role);
+            
+            return `
+                <div style="background: #F5EFE6; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <strong style="color: var(--dark-wood);">${formatRole(role)}</strong>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="addEditAssignment('${role}')" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                    <div id="edit-role-${role}">
+                        ${existingForRole.length > 0 ? existingForRole.map((a, idx) => `
+                            <div class="edit-assignment-row" id="assignment-${role}-${idx}" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; position: relative;">
+                                <input type="text" 
+                                    class="form-input member-autocomplete" 
+                                    style="flex: 1;" 
+                                    placeholder="Type to search or select reader..."
+                                    value="${a.member_name || ''}"
+                                    data-role="${role}"
+                                    data-idx="${idx}"
+                                    data-member-id="${a.member_id || ''}"
+                                    data-assignment-id="${a.id || ''}"
+                                    oninput="filterEditMembers(this, '${role}', ${idx})"
+                                    onfocus="showEditDropdown(this, '${role}', ${idx})"
+                                    onblur="hideEditDropdownDelayed('${role}', ${idx})"
+                                    autocomplete="off"
+                                    id="input-${role}-${idx}">
+                                <div class="autocomplete-dropdown" id="dropdown-${role}-${idx}" style="display: none; position: absolute; top: 100%; left: 0; right: 50px; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="removeEditAssignment('${role}', ${idx})" style="padding: 0.5rem;">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        `).join('') : `
+                            <div class="edit-assignment-row" id="assignment-${role}-0" style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; position: relative;">
+                                <input type="text" 
+                                    class="form-input member-autocomplete" 
+                                    style="flex: 1;" 
+                                    placeholder="Type to search or select reader..."
+                                    data-role="${role}"
+                                    data-idx="0"
+                                    data-member-id=""
+                                    oninput="filterEditMembers(this, '${role}', 0)"
+                                    onfocus="showEditDropdown(this, '${role}', 0)"
+                                    onblur="hideEditDropdownDelayed('${role}', 0)"
+                                    autocomplete="off"
+                                    id="input-${role}-0">
+                                <div class="autocomplete-dropdown" id="dropdown-${role}-0" style="display: none; position: absolute; top: 100%; left: 0; right: 50px; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Initialize editAssignments with existing data
+        editingMass.assignments.forEach(a => {
+            const key = `${a.role}_${a.id}`;
+            editAssignments[key] = {
+                id: a.id,
+                role: a.role,
+                member_id: a.member_id,
+                member_name_override: a.member_name && !a.member_id ? a.member_name : null
+            };
+        });
+    }
+
+    let editDropdownTimeout;
+
+    function filterEditMembers(input, role, idx) {
+        const searchTerm = input.value.toLowerCase();
+        const dropdown = document.getElementById(`dropdown-${role}-${idx}`);
+        
+        const filtered = members.filter(m => 
+            m.name.toLowerCase().includes(searchTerm)
+        );
+        
+        if (filtered.length === 0 && searchTerm.trim() !== '') {
+            dropdown.innerHTML = `
+                <div style="padding: 0.75rem; color: var(--text-muted); text-align: center;">
+                    <div style="margin-bottom: 0.5rem;">No matching members found</div>
+                    <div style="font-size: 0.85rem; color: var(--primary-burgundy);">
+                        <i class="fas fa-info-circle"></i> You can still enter any name manually
+                    </div>
+                </div>
+            `;
+        } else if (searchTerm.trim() === '') {
+            dropdown.innerHTML = members.slice(0, 50).map(m => `
+                <div class="autocomplete-item" onclick="selectEditMember('${role}', ${idx}, ${m.id}, '${m.name.replace(/'/g, "\\'")}')" 
+                    style="padding: 0.75rem; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;"
+                    onmouseover="this.style.background='#F5EFE6'" 
+                    onmouseout="this.style.background='white'">
+                    ${m.name}
+                </div>
+            `).join('');
+        } else {
+            dropdown.innerHTML = filtered.map(m => `
+                <div class="autocomplete-item" onclick="selectEditMember('${role}', ${idx}, ${m.id}, '${m.name.replace(/'/g, "\\'")}')" 
+                    style="padding: 0.75rem; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;"
+                    onmouseover="this.style.background='#F5EFE6'" 
+                    onmouseout="this.style.background='white'">
+                    ${m.name}
+                </div>
+            `).join('');
+        }
+        
+        dropdown.style.display = 'block';
+    }
+
+    function showEditDropdown(input, role, idx) {
+        clearTimeout(editDropdownTimeout);
+        filterEditMembers(input, role, idx);
+    }
+
+    function hideEditDropdownDelayed(role, idx) {
+        editDropdownTimeout = setTimeout(() => {
+            const dropdown = document.getElementById(`dropdown-${role}-${idx}`);
+            if (dropdown) dropdown.style.display = 'none';
+        }, 200);
+    }
+
+    function selectEditMember(role, idx, memberId, memberName) {
+        const input = document.getElementById(`input-${role}-${idx}`);
+        input.value = memberName;
+        input.setAttribute('data-member-id', memberId);
+        
+        const dropdown = document.getElementById(`dropdown-${role}-${idx}`);
+        dropdown.style.display = 'none';
+    }
+
+    function updateEditAssignment(role, idx, value) {
+        // Legacy function - no longer needed with autocomplete
+    }
+
+    function updateEditCustomName(role, idx, value) {
+        // Legacy function - no longer needed with autocomplete
+    }
+
+    function addEditAssignment(role) {
+        const container = document.getElementById(`edit-role-${role}`);
+        const existingRows = container.querySelectorAll('.edit-assignment-row');
+        const newIdx = existingRows.length;
+
+        const newRow = document.createElement('div');
+        newRow.className = 'edit-assignment-row';
+        newRow.id = `assignment-${role}-${newIdx}`;
+        newRow.style.cssText = 'display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; position: relative;';
+        newRow.innerHTML = `
+            <input type="text" 
+                class="form-input member-autocomplete" 
+                style="flex: 1;" 
+                placeholder="Type to search or select reader..."
+                data-role="${role}"
+                data-idx="${newIdx}"
+                data-member-id=""
+                oninput="filterEditMembers(this, '${role}', ${newIdx})"
+                onfocus="showEditDropdown(this, '${role}', ${newIdx})"
+                onblur="hideEditDropdownDelayed('${role}', ${newIdx})"
+                autocomplete="off"
+                id="input-${role}-${newIdx}">
+            <div class="autocomplete-dropdown" id="dropdown-${role}-${newIdx}" style="display: none; position: absolute; top: 100%; left: 0; right: 50px; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeEditAssignment('${role}', ${newIdx})" style="padding: 0.5rem;">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        container.appendChild(newRow);
+    }
+
+    function removeEditAssignment(role, idx) {
+        const row = document.getElementById(`assignment-${role}-${idx}`);
+        if (row) row.remove();
+    }
+
+    async function saveEditedMass() {
+        const massId = document.getElementById('editMassId').value;
+        const changeReason = document.getElementById('editChangeReason').value.trim();
+        
+        // Validate change reason
+        if (!changeReason) {
+            alert('Please provide a reason for the change. This is required for audit purposes.');
+            document.getElementById('editChangeReason').focus();
+            return;
+        }
+
+        // Update mass details
+        await api(`/masses/${massId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                date: document.getElementById('editMassDate').value,
+                time: document.getElementById('editMassTime').value,
+                celebrant: document.getElementById('editMassCelebrant').value,
+                notes: document.getElementById('editMassNotes').value,
+                change_reason: changeReason,
+                changed_by: 'Liturgy Admin'
+            })
+        });
+
+        // Collect all new assignments from the form
+        const mt = editingMass.mass_type || {};
+        const roles = getExpectedRoles(mt);
+        const newAssignments = [];
+
+        for (const role of roles) {
+            const container = document.getElementById(`edit-role-${role}`);
+            if (!container) continue;
+
+            const rows = container.querySelectorAll('.edit-assignment-row');
+            for (const row of rows) {
+                const input = row.querySelector('input.member-autocomplete');
+                
+                if (!input) continue;
+                
+                const memberName = input.value.trim();
+                if (!memberName) continue;
+
+                const memberId = input.getAttribute('data-member-id');
+                
+                newAssignments.push({
+                    role: role,
+                    member_id: memberId && memberId !== '' ? parseInt(memberId) : null,
+                    member_name: memberName
+                });
+            }
+        }
+
+        // Bulk update assignments with change logging
+        await api(`/masses/${massId}/assignments/bulk-update`, {
+            method: 'POST',
+            body: JSON.stringify({
+                assignments: newAssignments,
+                change_reason: changeReason,
+                changed_by: 'Liturgy Admin'
+            })
+        });
+
+        hideModal('editMassModal');
+        
+        // Switch to the year of the edited mass so it's visible after save
+        const newDate = document.getElementById('editMassDate').value;
+        const newYear = new Date(newDate).getFullYear().toString();
+        if (selectedYear !== 'all' && selectedYear !== newYear) {
+            selectedYear = newYear;
+            document.getElementById('yearFilter').value = newYear;
+        }
+        
+        await loadMasses();
+        alert('Mass updated successfully!');
+    }
+
+    function exportToExcel() {
+        const yearParam = selectedYear !== 'all' ? `?year=${selectedYear}` : '';
+        const fileName = selectedYear !== 'all' ? `mass_history_${selectedYear}.xlsx` : 'mass_history_all.xlsx';
+        
+        // Open download URL
+        window.location.href = `/api/masses/export${yearParam}`;
+    }
+
+    async function viewMassHistory() {
+        const massId = document.getElementById('editMassId').value;
+        const historyContent = document.getElementById('historyContent');
+        
+        try {
+            const history = await api(`/masses/${massId}/history`);
+            
+            if (history.length === 0) {
+                historyContent.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No changes have been recorded for this mass yet.</p>
+                    </div>
+                `;
+            } else {
+                historyContent.innerHTML = `
+                    <div style="font-size: 0.9rem;">
+                        ${history.map(log => `
+                            <div style="background: #F5EFE6; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; border-left: 4px solid var(--primary-burgundy);">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <strong style="color: var(--dark-wood);">${log.changed_at}</strong>
+                                    <span style="color: var(--text-muted); font-size: 0.85rem;">${log.changed_by || 'System'}</span>
+                                </div>
+                                <div style="background: white; padding: 0.75rem; border-radius: 4px; margin-bottom: 0.5rem;">
+                                    <strong>Field Changed:</strong> <span style="color: var(--primary-burgundy);">${formatRole(log.field_changed)}</span><br>
+                                    <strong>From:</strong> <span style="text-decoration: line-through; color: #999;">${log.old_value || '(empty)'}</span><br>
+                                    <strong>To:</strong> <span style="color: #28a745; font-weight: 600;">${log.new_value || '(empty)'}</span>
+                                </div>
+                                <div style="background: #ffe6e6; padding: 0.75rem; border-radius: 4px;">
+                                    <strong style="color: #dc3545;"><i class="fas fa-comment"></i> Reason:</strong><br>
+                                    <em>${log.change_reason}</em>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            showModal('historyModal');
+        } catch (error) {
+            console.error('Error loading history:', error);
+            historyContent.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+                    <p>Error loading change history. Please try again.</p>
+                </div>
+            `;
+            showModal('historyModal');
+        }
+    }
+
+</script>
+{% endblock %}
+
