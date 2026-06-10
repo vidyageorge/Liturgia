@@ -341,25 +341,65 @@ async function getMemberRoles(memberId) {
   return rows.map((r) => r.name);
 }
 
+function countMap(rows, key = 'member_id') {
+  const map = new Map();
+  for (const row of rows) {
+    map.set(row[key], Number(row.count || 0));
+  }
+  return map;
+}
+
+function rolesMap(rows) {
+  const map = new Map();
+  for (const row of rows) {
+    if (!map.has(row.member_id)) map.set(row.member_id, []);
+    map.get(row.member_id).push(row.name);
+  }
+  return map;
+}
+
 const memberQueries = {
   getAll: async () => {
     const members = await dbAll('SELECT * FROM members WHERE active = 1 ORDER BY name');
+    if (!members.length) return [];
+
+    const memberIds = members.map((m) => m.id);
+    const idPlaceholders = memberIds.map(() => '?').join(',');
     const currentYear = String(new Date().getFullYear());
-    const result = [];
-    for (const m of members) {
-      const currentYearRow = await dbGet(
-        `SELECT COUNT(*) AS count FROM mass_assignments ma
+
+    const [roleRows, totalRows, yearRows] = await Promise.all([
+      dbAll(
+        `SELECT mr.member_id, cr.name
+         FROM member_roles mr
+         JOIN community_roles cr ON cr.id = mr.role_id
+         WHERE mr.member_id IN (${idPlaceholders})`,
+        memberIds
+      ),
+      dbAll(
+        `SELECT member_id, COUNT(*) AS count
+         FROM mass_assignments
+         WHERE member_id IN (${idPlaceholders})
+         GROUP BY member_id`,
+        memberIds
+      ),
+      dbAll(
+        `SELECT ma.member_id, COUNT(*) AS count
+         FROM mass_assignments ma
          JOIN masses ON masses.id = ma.mass_id
-         WHERE ma.member_id = ? AND ${yearFilterSql}`,
-        [m.id, currentYear]
-      );
-      const totalRow = await dbGet(
-        'SELECT COUNT(*) AS count FROM mass_assignments WHERE member_id = ?',
-        [m.id]
-      );
-      const roles = await getMemberRoles(m.id);
+         WHERE ma.member_id IN (${idPlaceholders}) AND ${yearFilterSql}
+         GROUP BY ma.member_id`,
+        [...memberIds, currentYear]
+      ),
+    ]);
+
+    const memberRoles = rolesMap(roleRows);
+    const totalCounts = countMap(totalRows);
+    const yearCounts = countMap(yearRows);
+
+    return members.map((m) => {
       const createdAt = toDateString(m.created_at);
-      result.push({
+      const readingCount = totalCounts.get(m.id) || 0;
+      return {
         id: m.id,
         name: m.name,
         phone: m.phone,
@@ -367,17 +407,16 @@ const memberQueries = {
         active: Boolean(m.active),
         experience_level: m.experience_level,
         years_of_service: m.years_of_service,
-        roles,
-        reading_count: Number(totalRow?.count || 0),
-        current_year_count: Number(currentYearRow?.count || 0),
-        total_readings: Number(totalRow?.count || 0),
+        roles: memberRoles.get(m.id) || [],
+        reading_count: readingCount,
+        current_year_count: yearCounts.get(m.id) || 0,
+        total_readings: readingCount,
         created_at: createdAt,
         member_since: createdAt
           ? new Date(createdAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
           : 'Unknown',
-      });
-    }
-    return result;
+      };
+    });
   },
   getById: async (id) => {
     const m = await dbGet('SELECT * FROM members WHERE id = ?', [id]);
@@ -559,49 +598,77 @@ const massTypeQueries = {
   },
 };
 
-async function loadMassDetails(massRow) {
-  const massType = mapMassTypeRow(
-    await dbGet('SELECT * FROM mass_types WHERE id = ?', [massRow.mass_type_id])
-  );
-  const assignments = await dbAll(
-    `SELECT ma.*, m.name AS member_name
-     FROM mass_assignments ma
-     LEFT JOIN members m ON m.id = ma.member_id
-     WHERE ma.mass_id = ?
-     ORDER BY ma.id`,
-    [massRow.id]
-  );
-  const apostles = await dbAll(
-    `SELECT a.*, m.name AS member_name
-     FROM apostles a
-     LEFT JOIN members m ON m.id = a.member_id
-     WHERE a.mass_id = ?
-     ORDER BY a.id`,
-    [massRow.id]
-  );
-  const departedSouls = await dbAll('SELECT * FROM departed_souls WHERE mass_id = ? ORDER BY id', [
-    massRow.id,
+function groupRowsByMassId(rows) {
+  const map = new Map();
+  for (const row of rows) {
+    if (!map.has(row.mass_id)) map.set(row.mass_id, []);
+    map.get(row.mass_id).push(row);
+  }
+  return map;
+}
+
+async function loadMassesDetails(massRows) {
+  if (!massRows.length) return [];
+
+  const massIds = massRows.map((row) => row.id);
+  const massTypeIds = [...new Set(massRows.map((row) => row.mass_type_id))];
+  const idPlaceholders = massIds.map(() => '?').join(',');
+  const typePlaceholders = massTypeIds.map(() => '?').join(',');
+
+  const [typeRows, assignmentRows, apostleRows, departedRows] = await Promise.all([
+    dbAll(`SELECT * FROM mass_types WHERE id IN (${typePlaceholders})`, massTypeIds),
+    dbAll(
+      `SELECT ma.*, m.name AS member_name
+       FROM mass_assignments ma
+       LEFT JOIN members m ON m.id = ma.member_id
+       WHERE ma.mass_id IN (${idPlaceholders})
+       ORDER BY ma.mass_id, ma.id`,
+      massIds
+    ),
+    dbAll(
+      `SELECT a.*, m.name AS member_name
+       FROM apostles a
+       LEFT JOIN members m ON m.id = a.member_id
+       WHERE a.mass_id IN (${idPlaceholders})
+       ORDER BY a.mass_id, a.id`,
+      massIds
+    ),
+    dbAll(
+      `SELECT * FROM departed_souls WHERE mass_id IN (${idPlaceholders}) ORDER BY mass_id, id`,
+      massIds
+    ),
   ]);
-  return buildMassResponse(massRow, massType, assignments, apostles, departedSouls);
+
+  const typeMap = new Map(typeRows.map((row) => [row.id, mapMassTypeRow(row)]));
+  const assignmentsByMass = groupRowsByMassId(assignmentRows);
+  const apostlesByMass = groupRowsByMassId(apostleRows);
+  const departedByMass = groupRowsByMassId(departedRows);
+
+  return massRows.map((row) =>
+    buildMassResponse(
+      row,
+      typeMap.get(row.mass_type_id) || null,
+      assignmentsByMass.get(row.id) || [],
+      apostlesByMass.get(row.id) || [],
+      departedByMass.get(row.id) || []
+    )
+  );
+}
+
+async function loadMassDetails(massRow) {
+  const [mass] = await loadMassesDetails([massRow]);
+  return mass;
 }
 
 const massQueries = {
   getAll: async () => {
     const rows = await dbAll('SELECT * FROM masses ORDER BY date DESC');
-    const result = [];
-    for (const row of rows) {
-      result.push(await loadMassDetails(row));
-    }
-    return result;
+    return loadMassesDetails(rows);
   },
   getUpcoming: async () => {
     const today = new Date().toISOString().split('T')[0];
     const rows = await dbAll('SELECT * FROM masses WHERE date >= ? ORDER BY date ASC', [today]);
-    const result = [];
-    for (const row of rows) {
-      result.push(await loadMassDetails(row));
-    }
-    return result;
+    return loadMassesDetails(rows);
   },
   getPast: async (limit = 50) => {
     const today = new Date().toISOString().split('T')[0];
@@ -609,11 +676,7 @@ const massQueries = {
       today,
       limit,
     ]);
-    const result = [];
-    for (const row of rows) {
-      result.push(await loadMassDetails(row));
-    }
-    return result;
+    return loadMassesDetails(rows);
   },
   getById: async (id) => {
     const row = await dbGet('SELECT * FROM masses WHERE id = ?', [id]);
@@ -710,11 +773,7 @@ const massQueries = {
       sql += ' ORDER BY date ASC';
       rows = await dbAll(sql, params);
     }
-    const result = [];
-    for (const row of rows) {
-      result.push(await loadMassDetails(row));
-    }
-    return result;
+    return loadMassesDetails(rows);
   },
 };
 

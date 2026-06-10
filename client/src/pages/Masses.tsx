@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
+import PageLoading from '../components/PageLoading';
 import type { Mass } from '../types';
 import { formatDate, formatRole } from '../utils/format';
 
@@ -9,9 +10,10 @@ export default function Masses() {
   const [masses, setMasses] = useState<Mass[]>([]);
   const [tab, setTab] = useState<FilterTab>('all');
   const [exportYear, setExportYear] = useState(String(new Date().getFullYear()));
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getMasses().then(setMasses);
+    api.getMasses().then(setMasses).finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
@@ -36,6 +38,8 @@ export default function Masses() {
     }
     return map;
   };
+
+  if (loading) return <PageLoading />;
 
   return (
     <>

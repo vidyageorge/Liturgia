@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import Modal from '../components/Modal';
+import PageLoading from '../components/PageLoading';
 import type { Member, MemberHistoryEntry } from '../types';
 import { formatDate, formatRole } from '../utils/format';
 
@@ -17,8 +18,10 @@ export default function Readers() {
   const [editing, setEditing] = useState<Member | null>(null);
   const [historyReader, setHistoryReader] = useState<Member | null>(null);
   const [history, setHistory] = useState<MemberHistoryEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const loadReaders = () => api.getMembers().then(setReaders);
+  const loadReaders = () =>
+    api.getMembers().then(setReaders).finally(() => setLoading(false));
 
   useEffect(() => {
     loadReaders();
@@ -67,6 +70,8 @@ export default function Readers() {
     setHistoryReader(reader);
     setHistory(await api.getMemberHistory(reader.id));
   };
+
+  if (loading) return <PageLoading />;
 
   return (
     <>

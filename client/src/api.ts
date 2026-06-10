@@ -15,6 +15,30 @@ export const API_URL =
   import.meta.env.VITE_API_URL ??
   (import.meta.env.PROD ? '/api' : 'http://localhost:3000/api');
 
+const getCache = new Map<string, Promise<unknown>>();
+
+export function invalidateApiCache() {
+  getCache.clear();
+}
+
+function cachedGet<T>(endpoint: string): Promise<T> {
+  if (!getCache.has(endpoint)) {
+    const promise = request<T>(endpoint).catch((err) => {
+      getCache.delete(endpoint);
+      throw err;
+    });
+    getCache.set(endpoint, promise);
+  }
+  return getCache.get(endpoint) as Promise<T>;
+}
+
+function mutate<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  return request<T>(endpoint, options).then((result) => {
+    invalidateApiCache();
+    return result;
+  });
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
@@ -40,49 +64,50 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 }
 
 export const api = {
-  getStats: () => request<Stats>('/stats'),
-  getMembers: () => request<Member[]>('/members'),
-  getMemberPickerList: () => request<MemberPickerItem[]>('/members/picker'),
-  getMember: (id: number) => request<Member>(`/members/${id}`),
+  getStats: () => cachedGet<Stats>('/stats'),
+  getMembers: () => cachedGet<Member[]>('/members'),
+  getMemberPickerList: () => cachedGet<MemberPickerItem[]>('/members/picker'),
+  getMember: (id: number) => cachedGet<Member>(`/members/${id}`),
   createMember: (data: Partial<Member>) =>
-    request<Member>('/members', { method: 'POST', body: JSON.stringify(data) }),
+    mutate<Member>('/members', { method: 'POST', body: JSON.stringify(data) }),
   updateMember: (id: number, data: Partial<Member>) =>
-    request<Member>(`/members/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    mutate<Member>(`/members/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteMember: (id: number) =>
-    request<{ message: string }>(`/members/${id}`, { method: 'DELETE' }),
+    mutate<{ message: string }>(`/members/${id}`, { method: 'DELETE' }),
   addMemberRole: (memberId: number, roleId: number) =>
-    request<Member>(`/members/${memberId}/roles`, {
+    mutate<Member>(`/members/${memberId}/roles`, {
       method: 'POST',
       body: JSON.stringify({ role_id: roleId }),
     }),
   removeMemberRole: (memberId: number, roleId: number) =>
-    request<Member>(`/members/${memberId}/roles/${roleId}`, { method: 'DELETE' }),
-  getMemberHistory: (id: number) => request<MemberHistoryEntry[]>(`/members/${id}/history`),
+    mutate<Member>(`/members/${memberId}/roles/${roleId}`, { method: 'DELETE' }),
+  getMemberHistory: (id: number) =>
+    cachedGet<MemberHistoryEntry[]>(`/members/${id}/history`),
 
-  getPriests: () => request<Priest[]>('/priests'),
+  getPriests: () => cachedGet<Priest[]>('/priests'),
   createPriest: (data: { name: string; title?: string; phone?: string }) =>
-    request<Priest>('/priests', { method: 'POST', body: JSON.stringify(data) }),
+    mutate<Priest>('/priests', { method: 'POST', body: JSON.stringify(data) }),
   updatePriest: (id: number, data: Partial<Priest>) =>
-    request<Priest>(`/priests/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    mutate<Priest>(`/priests/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePriest: (id: number) =>
-    request<{ message: string }>(`/priests/${id}`, { method: 'DELETE' }),
+    mutate<{ message: string }>(`/priests/${id}`, { method: 'DELETE' }),
 
-  getRoles: () => request<CommunityRole[]>('/roles'),
+  getRoles: () => cachedGet<CommunityRole[]>('/roles'),
   createRole: (data: { name: string; category?: string; description?: string }) =>
-    request<CommunityRole>('/roles', { method: 'POST', body: JSON.stringify(data) }),
+    mutate<CommunityRole>('/roles', { method: 'POST', body: JSON.stringify(data) }),
 
-  getMassTypes: () => request<MassType[]>('/mass-types'),
-  getMasses: () => request<Mass[]>('/masses'),
-  getUpcomingMasses: () => request<Mass[]>('/masses/upcoming'),
-  getPastMasses: () => request<Mass[]>('/masses/past'),
-  getMass: (id: number) => request<Mass>(`/masses/${id}`),
+  getMassTypes: () => cachedGet<MassType[]>('/mass-types'),
+  getMasses: () => cachedGet<Mass[]>('/masses'),
+  getUpcomingMasses: () => cachedGet<Mass[]>('/masses/upcoming'),
+  getPastMasses: () => cachedGet<Mass[]>('/masses/past'),
+  getMass: (id: number) => cachedGet<Mass>(`/masses/${id}`),
   createMass: (data: {
     mass_type_id: number;
     date: string;
     time?: string;
     celebrant?: string;
     notes?: string;
-  }) => request<Mass>('/masses', { method: 'POST', body: JSON.stringify(data) }),
+  }) => mutate<Mass>('/masses', { method: 'POST', body: JSON.stringify(data) }),
   updateMass: (
     id: number,
     data: {
@@ -94,16 +119,16 @@ export const api = {
       change_reason: string;
       changed_by?: string;
     }
-  ) => request<Mass>(`/masses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  ) => mutate<Mass>(`/masses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteMass: (id: number) =>
-    request<{ message: string }>(`/masses/${id}`, { method: 'DELETE' }),
+    mutate<{ message: string }>(`/masses/${id}`, { method: 'DELETE' }),
   bulkUpdateAssignments: (
     massId: number,
     assignments: AssignmentInput[],
     changeReason?: string,
     changedBy?: string
   ) =>
-    request<Mass>(`/masses/${massId}/assignments/bulk-update`, {
+    mutate<Mass>(`/masses/${massId}/assignments/bulk-update`, {
       method: 'POST',
       body: JSON.stringify({
         assignments,
@@ -115,28 +140,28 @@ export const api = {
     massId: number,
     data: { apostle_name: string; member_id?: number; member_name_override?: string }
   ) =>
-    request<Mass>(`/masses/${massId}/apostles`, {
+    mutate<Mass>(`/masses/${massId}/apostles`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   deleteApostle: (massId: number, apostleId: number) =>
-    request<{ message: string }>(`/masses/${massId}/apostles/${apostleId}`, {
+    mutate<{ message: string }>(`/masses/${massId}/apostles/${apostleId}`, {
       method: 'DELETE',
     }),
   getDepartedSouls: (massId: number) =>
-    request<{ id: number; name: string; family_name?: string }[]>(
+    cachedGet<{ id: number; name: string; family_name?: string }[]>(
       `/masses/${massId}/departed-souls`
     ),
   addDepartedSoul: (massId: number, data: { name: string; family_name?: string }) =>
-    request(`/masses/${massId}/departed-souls`, {
+    mutate(`/masses/${massId}/departed-souls`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
   deleteDepartedSoul: (massId: number, soulId: number) =>
-    request(`/masses/${massId}/departed-souls/${soulId}`, { method: 'DELETE' }),
+    mutate(`/masses/${massId}/departed-souls/${soulId}`, { method: 'DELETE' }),
 
   getChangelog: (limit?: number) =>
-    request<ChangeLogEntry[]>(`/changelog${limit ? `?limit=${limit}` : ''}`),
+    cachedGet<ChangeLogEntry[]>(`/changelog${limit ? `?limit=${limit}` : ''}`),
 
   exportMassesUrl: (params: { year?: string; start_date?: string; end_date?: string }) => {
     const query = new URLSearchParams();

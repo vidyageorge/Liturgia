@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import MemberSelect from '../components/MemberSelect';
 import Modal from '../components/Modal';
+import PageLoading from '../components/PageLoading';
 import type { AssignmentInput, Mass, MassType, MemberPickerItem, Priest } from '../types';
 import { APOSTLE_NAMES, ROLE_LABELS, formatDate } from '../utils/format';
 
@@ -25,27 +26,32 @@ export default function Schedule() {
   const [editingMass, setEditingMass] = useState<Mass | null>(null);
   const [editReason, setEditReason] = useState('');
   const [editAssignments, setEditAssignments] = useState<Record<string, RoleAssignment[]>>({});
+  const [loading, setLoading] = useState(true);
 
   const selectedType = useMemo(
     () => massTypes.find((mt) => mt.id === Number(massTypeId)) || null,
     [massTypes, massTypeId]
   );
 
-  const load = () =>
-    Promise.all([
+  const load = (showLoading = false) => {
+    if (showLoading) setLoading(true);
+    return Promise.all([
       api.getMassTypes(),
       api.getMemberPickerList(),
       api.getPriests(),
       api.getUpcomingMasses(),
-    ]).then(([types, membersData, priestsData, upcomingData]) => {
-      setMassTypes(types);
-      setMembers(membersData);
-      setPriests(priestsData);
-      setUpcoming(upcomingData);
-    });
+    ])
+      .then(([types, membersData, priestsData, upcomingData]) => {
+        setMassTypes(types);
+        setMembers(membersData);
+        setPriests(priestsData);
+        setUpcoming(upcomingData);
+      })
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    load();
+    load(true);
   }, []);
 
   useEffect(() => {
@@ -224,6 +230,8 @@ export default function Schedule() {
     }
     return roles;
   };
+
+  if (loading) return <PageLoading />;
 
   return (
     <>

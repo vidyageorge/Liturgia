@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import Modal from '../components/Modal';
+import PageLoading from '../components/PageLoading';
 import type { CommunityRole, Member } from '../types';
 
 const CATEGORY_META: Record<string, { label: string; className: string }> = {
@@ -16,12 +17,15 @@ export default function Community() {
   const [members, setMembers] = useState<Member[]>([]);
   const [showAddRole, setShowAddRole] = useState(false);
   const [assignRole, setAssignRole] = useState<CommunityRole | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = () =>
-    Promise.all([api.getRoles(), api.getMembers()]).then(([rolesData, membersData]) => {
-      setRoles(rolesData);
-      setMembers(membersData);
-    });
+    Promise.all([api.getRoles(), api.getMembers()])
+      .then(([rolesData, membersData]) => {
+        setRoles(rolesData);
+        setMembers(membersData);
+      })
+      .finally(() => setLoading(false));
 
   useEffect(() => {
     load();
@@ -64,6 +68,8 @@ export default function Community() {
     await api.removeMemberRole(member.id, role.id);
     load();
   };
+
+  if (loading) return <PageLoading />;
 
   return (
     <>

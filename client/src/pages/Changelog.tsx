@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
+import PageLoading from '../components/PageLoading';
 import type { ChangeLogEntry } from '../types';
 import { formatDate, formatRole } from '../utils/format';
 
@@ -7,10 +8,12 @@ export default function Changelog() {
   const [changes, setChanges] = useState<ChangeLogEntry[]>([]);
   const [fieldFilter, setFieldFilter] = useState('');
   const [limit, setLimit] = useState('50');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     const loadLimit = limit === 'all' ? undefined : Number(limit);
-    api.getChangelog(loadLimit).then(setChanges);
+    api.getChangelog(loadLimit).then(setChanges).finally(() => setLoading(false));
   }, [limit]);
 
   const filtered = useMemo(() => {
@@ -26,6 +29,8 @@ export default function Changelog() {
     if (field.includes('_reader')) return formatRole(field.replace('_reader', ''));
     return formatRole(field);
   };
+
+  if (loading) return <PageLoading />;
 
   return (
     <>

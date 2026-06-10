@@ -1,33 +1,90 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { api } from '../api';
+import PageLoading from '../components/PageLoading';
 import type { Mass, MassType, Stats } from '../types';
 import { formatDate } from '../utils/format';
 
+function splitMassesByDate(masses: Mass[]) {
+  const today = new Date().toISOString().split('T')[0];
+  const upcoming = masses.filter((m) => m.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  const recent = masses.filter((m) => m.date < today).sort((a, b) => b.date.localeCompare(a.date));
+  return { upcoming, recent };
+}
+
 export default function Dashboard() {
+  const location = useLocation();
   const [stats, setStats] = useState<Stats | null>(null);
   const [massTypes, setMassTypes] = useState<MassType[]>([]);
   const [upcoming, setUpcoming] = useState<Mass[]>([]);
   const [recent, setRecent] = useState<Mass[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    Promise.all([
+  const load = useCallback(async (retriesLeft = 2) => {
+    const results = await Promise.allSettled([
       api.getStats(),
       api.getMassTypes(),
-      api.getUpcomingMasses(),
-      api.getPastMasses(),
-    ]).then(([statsData, types, upcomingData, pastData]) => {
-      setStats(statsData);
-      setMassTypes(types);
+      api.getMasses(),
+    ]);
+
+    const [statsResult, typesResult, massesResult] = results;
+    if (statsResult.status === 'fulfilled') setStats(statsResult.value);
+    if (typesResult.status === 'fulfilled') setMassTypes(typesResult.value);
+    if (massesResult.status === 'fulfilled') {
+      const { upcoming: upcomingData, recent: pastData } = splitMassesByDate(massesResult.value);
       setUpcoming(upcomingData);
       setRecent(pastData);
-    });
+    }
+
+    const failed = results.find((r) => r.status === 'rejected') as PromiseRejectedResult | undefined;
+    if (failed) {
+      if (retriesLeft > 0) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        return load(retriesLeft - 1);
+      }
+      setError(failed.reason?.message || 'Failed to load dashboard');
+      return;
+    }
+    setError(null);
   }, []);
+
+  useEffect(() => {
+    if (location.pathname !== '/') return;
+    let cancelled = false;
+    setLoading(true);
+    load().finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, load]);
 
   const specialCount = massTypes.filter((mt) => mt.is_special_event).length;
 
+  if (loading) return <PageLoading />;
+
   return (
     <>
+      {error && (
+        <div className="card" style={{ marginBottom: '1.5rem' }}>
+          <div className="card-body empty-state">
+            <p>{error}</p>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                setLoading(true);
+                load().finally(() => setLoading(false));
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="page-header">
         <h2 className="page-title">Welcome to Liturgia</h2>
         <p className="page-subtitle">Reader roster and liturgy assignment management</p>
