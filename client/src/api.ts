@@ -10,7 +10,9 @@ import type {
   Stats,
 } from './types';
 
-const API_URL = import.meta.env.VITE_API_URL ?? '/api';
+export const API_URL =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? '/api' : 'http://localhost:3000/api');
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -20,14 +22,20 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       ...options.headers,
     },
   });
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await response.text();
+    if (text.trimStart().toLowerCase().startsWith('<!doctype') || text.trimStart().startsWith('<html')) {
+      throw new Error('Server is waking up. Wait a moment and try again.');
+    }
+    throw new Error(text.slice(0, 120) || `Request failed (${response.status})`);
+  }
+  const data = await response.json();
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || 'Request failed');
+    throw new Error(data.error || 'Request failed');
   }
   if (response.status === 204) return undefined as T;
-  const contentType = response.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) return undefined as T;
-  return response.json();
+  return data;
 }
 
 export const api = {

@@ -1,0 +1,27 @@
+# Pings the Render service every 14 minutes so the free tier stays awake.
+# Without this, visitors see Render's "SERVICE WAKING UP" screen for ~30-90s.
+#
+# Setup (one time):
+# 1. Push this repo to GitHub
+# 2. Repo → Settings → Secrets and variables → Actions → New repository secret
+# 3. Name: RENDER_APP_URL   Value: https://liturgia.onrender.com  (your Render URL, no trailing slash)
+# 4. Actions tab → enable workflows if prompted
+
+name: Keep Render warm
+
+on:
+  schedule:
+    - cron: '*/14 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          if [ -z "${{ secrets.RENDER_APP_URL }}" ]; then
+            echo "RENDER_APP_URL secret not set — skip. Add it in repo Settings → Secrets."
+            exit 0
+          fi
+          curl -fsS --max-time 120 "${{ secrets.RENDER_APP_URL }}/api/health" || true

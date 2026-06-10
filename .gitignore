@@ -52,5 +52,11 @@ client/node_modules/
 client/dist/
 npm-debug.log*
 
+# Capacitor / Android
+client/android/
+client/.capacitor/
+*.apk
+*.aab
+
 # Legacy Python virtualenv
 venv/

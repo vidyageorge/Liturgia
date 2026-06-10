@@ -24,7 +24,16 @@ npm run dev
 
 ## Production (Render + Neon)
 
-See [HOSTING_NEON.md](HOSTING_NEON.md) for full deployment steps.
+See [HOSTING_NEON.md](HOSTING_NEON.md) for database setup and [DEPLOYMENT.md](DEPLOYMENT.md) for the full web → GitHub → Render → Android APK guide.
+
+## Android APK
+
+Liturgia can be installed on Android as a Capacitor-wrapped WebView app that talks to your hosted Render API.
+
+| Method | Command / location |
+|--------|-------------------|
+| GitHub Actions (no SDK needed) | Actions → **Build Android APK** → download artifact |
+| Local build (needs Android SDK) | `npm run build:apk` → `Liturgia-debug.apk` |
 
 ## Scripts
 
@@ -33,6 +42,7 @@ See [HOSTING_NEON.md](HOSTING_NEON.md) for full deployment steps.
 | `npm run dev` | Start API + React dev servers |
 | `npm run build` | Build React app for production |
 | `npm start` | Run production server |
+| `npm run build:apk` | Build Android debug APK (local SDK required) |
 | `npm run migrate-to-postgres` | Copy `liturgia.db` data to Neon |
 
 ## Features
