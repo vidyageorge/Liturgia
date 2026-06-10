@@ -1,10 +1,12 @@
 /**
- * One-time copy: local liturgia.db (Flask SQLite) -> Neon/Postgres (DATABASE_URL).
+ * One-time copy: local liturgia.db -> Neon/Postgres (DATABASE_URL).
+ * Supports both Node schema (members, masses) and legacy Flask schema (member, mass).
  *
- * PowerShell:
- *   $env:DATABASE_URL = "postgresql://neondb_owner:PASSWORD@ep-xxx-pooler....neon.tech/neondb?sslmode=require"
+ * Create .env with DATABASE_URL, or:
+ *   $env:DATABASE_URL = "postgresql://..."
  *   npm run migrate-to-postgres
  */
+const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const { Pool } = require('pg');
@@ -13,15 +15,56 @@ const { initializeDatabase } = require('../server/database');
 const projectRoot = path.join(__dirname, '..');
 require('dotenv').config({ path: path.join(projectRoot, '.env') });
 
-const sqlitePath = process.env.DATABASE_PATH || path.join(projectRoot, 'liturgia.db');
 const databaseUrl = String(process.env.DATABASE_URL || '')
   .replace(/^["']|["']$/g, '')
   .trim();
+
+const SQLITE_CANDIDATES = [
+  process.env.DATABASE_PATH,
+  path.join(projectRoot, 'liturgia.db'),
+  path.join(projectRoot, 'instance', 'liturgia.db'),
+].filter(Boolean);
 
 function sqliteAll(db, sql, params = []) {
   return new Promise((resolve, reject) => {
     db.all(sql, params, (err, rows) => (err ? reject(err) : resolve(rows || [])));
   });
+}
+
+function openSqlite(dbPath) {
+  return new Promise((resolve, reject) => {
+    const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+      if (err) reject(err);
+      else resolve(db);
+    });
+  });
+}
+
+async function detectSchema(db) {
+  const tables = await sqliteAll(
+    db,
+    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+  );
+  const names = new Set(tables.map((t) => t.name));
+  if (names.has('members')) return 'node';
+  if (names.has('member')) return 'flask';
+  throw new Error('Unrecognized SQLite schema (expected members or member table).');
+}
+
+async function findSqliteDatabase() {
+  for (const dbPath of SQLITE_CANDIDATES) {
+    if (!fs.existsSync(dbPath)) continue;
+    try {
+      const db = await openSqlite(dbPath);
+      const schema = await detectSchema(db);
+      return { db, dbPath, schema };
+    } catch {
+      // try next candidate
+    }
+  }
+  throw new Error(
+    'No liturgia.db found. Expected liturgia.db or instance/liturgia.db in the project folder.'
+  );
 }
 
 async function insertRows(pool, table, columns, rows) {
@@ -37,10 +80,47 @@ async function insertRows(pool, table, columns, rows) {
   return count;
 }
 
+async function loadSourceData(db, schema) {
+  if (schema === 'node') {
+    return {
+      members: await sqliteAll(db, 'SELECT * FROM members'),
+      priests: await sqliteAll(db, 'SELECT * FROM priests'),
+      roles: await sqliteAll(db, 'SELECT * FROM community_roles'),
+      memberRoles: await sqliteAll(db, 'SELECT * FROM member_roles'),
+      massTypes: await sqliteAll(db, 'SELECT * FROM mass_types'),
+      masses: await sqliteAll(db, 'SELECT * FROM masses'),
+      assignments: await sqliteAll(db, 'SELECT * FROM mass_assignments'),
+      apostles: await sqliteAll(db, 'SELECT * FROM apostles'),
+      departedSouls: await sqliteAll(db, 'SELECT * FROM departed_souls'),
+      changeLogs: await sqliteAll(db, 'SELECT * FROM mass_change_logs'),
+    };
+  }
+
+  return {
+    members: await sqliteAll(db, 'SELECT * FROM member'),
+    priests: await sqliteAll(db, 'SELECT * FROM priest'),
+    roles: await sqliteAll(db, 'SELECT * FROM community_role'),
+    memberRoles: await sqliteAll(db, 'SELECT * FROM member_roles'),
+    massTypes: await sqliteAll(db, 'SELECT * FROM mass_type'),
+    masses: await sqliteAll(db, 'SELECT * FROM mass'),
+    assignments: await sqliteAll(db, 'SELECT * FROM mass_assignment'),
+    apostles: await sqliteAll(db, 'SELECT * FROM apostle'),
+    departedSouls: await sqliteAll(db, 'SELECT * FROM departed_soul'),
+    changeLogs: await sqliteAll(db, 'SELECT * FROM mass_change_log'),
+  };
+}
+
 async function main() {
   if (!databaseUrl) {
-    throw new Error('Set DATABASE_URL to your Neon connection string before running migration.');
+    throw new Error(
+      'DATABASE_URL is not set. Add it to .env in the project root, or run:\n' +
+        '  $env:DATABASE_URL = "postgresql://..."\n' +
+        '  npm run migrate-to-postgres'
+    );
   }
+
+  const { db, dbPath, schema } = await findSqliteDatabase();
+  console.log(`Using SQLite: ${dbPath} (${schema} schema)`);
 
   const pool = new Pool({
     connectionString: databaseUrl,
@@ -51,50 +131,76 @@ async function main() {
 
   await initializeDatabase();
 
-  const sqliteDb = new sqlite3.Database(sqlitePath);
-  const members = await sqliteAll(sqliteDb, 'SELECT * FROM member');
-  const priests = await sqliteAll(sqliteDb, 'SELECT * FROM priest');
-  const roles = await sqliteAll(sqliteDb, 'SELECT * FROM community_role');
-  const memberRoles = await sqliteAll(sqliteDb, 'SELECT * FROM member_roles');
-  const massTypes = await sqliteAll(sqliteDb, 'SELECT * FROM mass_type');
-  const masses = await sqliteAll(sqliteDb, 'SELECT * FROM mass');
-  const assignments = await sqliteAll(sqliteDb, 'SELECT * FROM mass_assignment');
-  const apostles = await sqliteAll(sqliteDb, 'SELECT * FROM apostle');
-  const departedSouls = await sqliteAll(sqliteDb, 'SELECT * FROM departed_soul');
-  const changeLogs = await sqliteAll(sqliteDb, 'SELECT * FROM mass_change_log');
-
+  const data = await loadSourceData(db, schema);
   console.log(
-    `Found: ${members.length} members, ${priests.length} priests, ${masses.length} masses`
+    `Found: ${data.members.length} members, ${data.priests.length} priests, ${data.masses.length} masses`
   );
 
-  await pool.query('TRUNCATE mass_change_logs, departed_souls, apostles, mass_assignments, masses, member_roles, mass_types, community_roles, priests, members RESTART IDENTITY CASCADE');
+  if (data.members.length === 0 && data.masses.length === 0) {
+    console.warn('Warning: local database has no members or masses to copy.');
+  }
 
-  await insertRows(pool, 'members', ['id', 'name', 'phone', 'email', 'active', 'experience_level', 'years_of_service', 'created_at'], members);
-  await insertRows(pool, 'priests', ['id', 'name', 'title', 'phone', 'active', 'created_at'], priests);
-  await insertRows(pool, 'community_roles', ['id', 'name', 'category', 'description'], roles);
-  await insertRows(pool, 'member_roles', ['member_id', 'role_id'], memberRoles);
+  await pool.query(
+    'TRUNCATE mass_change_logs, departed_souls, apostles, mass_assignments, masses, member_roles, mass_types, community_roles, priests, members RESTART IDENTITY CASCADE'
+  );
+
+  await insertRows(
+    pool,
+    'members',
+    ['id', 'name', 'phone', 'email', 'active', 'experience_level', 'years_of_service', 'created_at'],
+    data.members
+  );
+  await insertRows(pool, 'priests', ['id', 'name', 'title', 'phone', 'active', 'created_at'], data.priests);
+  await insertRows(pool, 'community_roles', ['id', 'name', 'category', 'description'], data.roles);
+  await insertRows(pool, 'member_roles', ['member_id', 'role_id'], data.memberRoles);
   await insertRows(
     pool,
     'mass_types',
     [
-      'id', 'name', 'default_time', 'description', 'is_special_event', 'required_roles',
-      'has_gospel_narration', 'has_mc_reader', 'has_third_reading', 'has_apostles',
-      'has_thanksgiving', 'has_carols', 'has_morning_adoration', 'has_departed_souls_reader',
+      'id',
+      'name',
+      'default_time',
+      'description',
+      'is_special_event',
+      'required_roles',
+      'has_gospel_narration',
+      'has_mc_reader',
+      'has_third_reading',
+      'has_apostles',
+      'has_thanksgiving',
+      'has_carols',
+      'has_morning_adoration',
+      'has_departed_souls_reader',
     ],
-    massTypes
+    data.massTypes
   );
-  await insertRows(pool, 'masses', ['id', 'mass_type_id', 'date', 'time', 'celebrant', 'notes', 'created_at'], masses);
-  await insertRows(pool, 'mass_assignments', ['id', 'mass_id', 'member_id', 'role', 'member_name_override', 'notes'], assignments);
-  await insertRows(pool, 'apostles', ['id', 'mass_id', 'apostle_name', 'member_id', 'member_name_override'], apostles);
-  await insertRows(pool, 'departed_souls', ['id', 'mass_id', 'name', 'family_name'], departedSouls);
+  await insertRows(
+    pool,
+    'masses',
+    ['id', 'mass_type_id', 'date', 'time', 'celebrant', 'notes', 'created_at'],
+    data.masses
+  );
+  await insertRows(
+    pool,
+    'mass_assignments',
+    ['id', 'mass_id', 'member_id', 'role', 'member_name_override', 'notes'],
+    data.assignments
+  );
+  await insertRows(
+    pool,
+    'apostles',
+    ['id', 'mass_id', 'apostle_name', 'member_id', 'member_name_override'],
+    data.apostles
+  );
+  await insertRows(pool, 'departed_souls', ['id', 'mass_id', 'name', 'family_name'], data.departedSouls);
   await insertRows(
     pool,
     'mass_change_logs',
     ['id', 'mass_id', 'changed_at', 'changed_by', 'change_reason', 'field_changed', 'old_value', 'new_value'],
-    changeLogs
+    data.changeLogs
   );
 
-  sqliteDb.close();
+  db.close();
   await pool.end();
   console.log('Migration completed successfully.');
 }
