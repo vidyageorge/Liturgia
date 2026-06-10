@@ -5,6 +5,7 @@ import type {
   Mass,
   MassType,
   Member,
+  MemberPickerItem,
   MemberHistoryEntry,
   Priest,
   Stats,
@@ -41,6 +42,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 export const api = {
   getStats: () => request<Stats>('/stats'),
   getMembers: () => request<Member[]>('/members'),
+  getMemberPickerList: () => request<MemberPickerItem[]>('/members/picker'),
   getMember: (id: number) => request<Member>(`/members/${id}`),
   createMember: (data: Partial<Member>) =>
     request<Member>('/members', { method: 'POST', body: JSON.stringify(data) }),

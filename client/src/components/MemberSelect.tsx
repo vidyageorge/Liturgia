@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import type { Member } from '../types';
+import type { MemberPickerItem } from '../types';
 
 interface MemberSelectProps {
-  members: Member[];
+  members: MemberPickerItem[];
   value: { memberId?: number | null; name: string };
   onChange: (value: { memberId?: number | null; name: string }) => void;
   placeholder?: string;
@@ -19,12 +19,14 @@ export default function MemberSelect({
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
-    if (!term) return members;
-    return members.filter(
-      (m) =>
-        m.name.toLowerCase().includes(term) ||
-        (m.phone && m.phone.includes(term))
-    );
+    const list = term
+      ? members.filter(
+          (m) =>
+            m.name.toLowerCase().includes(term) ||
+            (m.phone && m.phone.includes(term))
+        )
+      : members;
+    return list.slice(0, 12);
   }, [members, search]);
 
   if (value.name && !open) {
@@ -73,21 +75,25 @@ export default function MemberSelect({
           )}
           {filtered.map((member) => (
             <button
-              key={member.id}
+              key={member.id ?? `name-${member.name}`}
               type="button"
               className="searchable-dropdown-item"
               onClick={() => {
-                onChange({ memberId: member.id, name: member.name });
+                onChange({ memberId: member.id ?? null, name: member.name });
                 setOpen(false);
                 setSearch('');
               }}
             >
               <div className="member-name">{member.name}</div>
               {member.phone && <div className="member-phone">{member.phone}</div>}
+              {!member.id && <div className="member-phone">From mass history</div>}
             </button>
           ))}
           {filtered.length === 0 && !search.trim() && (
-            <div className="no-results">No members found</div>
+            <div className="no-results">Type a name to add a reader</div>
+          )}
+          {filtered.length === 0 && search.trim() && (
+            <div className="no-results">No matches — use &quot;Add as reader&quot; above</div>
           )}
         </div>
       )}

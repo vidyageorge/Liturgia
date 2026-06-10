@@ -42,6 +42,14 @@ app.get('/api/members', async (req, res) => {
   }
 });
 
+app.get('/api/members/picker', async (req, res) => {
+  try {
+    res.json(await memberQueries.getPickerList());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/members/:id', async (req, res) => {
   try {
     const member = await memberQueries.getById(Number(req.params.id));

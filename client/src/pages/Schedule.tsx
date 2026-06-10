@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import MemberSelect from '../components/MemberSelect';
 import Modal from '../components/Modal';
-import type { AssignmentInput, Mass, MassType, Member, Priest } from '../types';
+import type { AssignmentInput, Mass, MassType, MemberPickerItem, Priest } from '../types';
 import { APOSTLE_NAMES, ROLE_LABELS, formatDate } from '../utils/format';
 
 type RoleAssignment = { memberId?: number | null; name: string };
 
 export default function Schedule() {
   const [massTypes, setMassTypes] = useState<MassType[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<MemberPickerItem[]>([]);
   const [priests, setPriests] = useState<Priest[]>([]);
   const [upcoming, setUpcoming] = useState<Mass[]>([]);
 
@@ -34,7 +34,7 @@ export default function Schedule() {
   const load = () =>
     Promise.all([
       api.getMassTypes(),
-      api.getMembers(),
+      api.getMemberPickerList(),
       api.getPriests(),
       api.getUpcomingMasses(),
     ]).then(([types, membersData, priestsData, upcomingData]) => {
@@ -227,13 +227,13 @@ export default function Schedule() {
 
   return (
     <>
-      <div className="card" style={{ marginBottom: '2rem' }}>
+      <div className="card card-compact" style={{ marginBottom: '1.25rem' }}>
         <div className="card-header">
           <h3 className="card-title">Upcoming Masses</h3>
         </div>
         <div className="card-body">
           {upcoming.length === 0 ? (
-            <div className="empty-state">
+            <div className="empty-state empty-state-compact">
               <p>No upcoming masses</p>
             </div>
           ) : (
@@ -352,7 +352,7 @@ export default function Schedule() {
       </div>
 
       {selectedType && (
-        <div className="card assignments-card" style={{ marginTop: '2rem' }}>
+        <div className="card card-compact assignments-card" style={{ marginTop: '1.25rem' }}>
           <div className="card-header">
             <h3 className="card-title">Reader Assignments</h3>
           </div>
@@ -363,7 +363,7 @@ export default function Schedule() {
       )}
 
       {selectedType?.has_apostles && (
-        <div className="card" style={{ marginTop: '2rem' }}>
+        <div className="card card-compact" style={{ marginTop: '1.25rem' }}>
           <div className="card-header">
             <h3 className="card-title">Twelve Apostles</h3>
           </div>

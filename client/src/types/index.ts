@@ -1,3 +1,9 @@
+export interface MemberPickerItem {
+  id?: number | null;
+  name: string;
+  phone?: string | null;
+}
+
 export interface Member {
   id: number;
   name: string;

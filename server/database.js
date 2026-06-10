@@ -410,6 +410,35 @@ const memberQueries = {
       ]
     ),
   deactivate: (id) => dbRun('UPDATE members SET active = 0 WHERE id = ?', [id]),
+  getPickerList: async () => {
+    const members = await memberQueries.getAll();
+    const seen = new Set(members.map((m) => m.name.toLowerCase()));
+    const extras = [];
+
+    const nameRows = await dbAll(
+      `SELECT DISTINCT COALESCE(m.name, ma.member_name_override) AS name
+       FROM mass_assignments ma
+       LEFT JOIN members m ON m.id = ma.member_id
+       WHERE COALESCE(m.name, ma.member_name_override) IS NOT NULL`
+    );
+    const apostleRows = await dbAll(
+      `SELECT DISTINCT COALESCE(m.name, a.member_name_override) AS name
+       FROM apostles a
+       LEFT JOIN members m ON m.id = a.member_id
+       WHERE COALESCE(m.name, a.member_name_override) IS NOT NULL`
+    );
+
+    for (const row of [...nameRows, ...apostleRows]) {
+      const name = String(row.name || '').trim();
+      const key = name.toLowerCase();
+      if (!name || seen.has(key)) continue;
+      seen.add(key);
+      extras.push({ id: null, name, phone: null });
+    }
+
+    extras.sort((a, b) => a.name.localeCompare(b.name));
+    return [...members, ...extras];
+  },
   addRole: (memberId, roleId) => {
     if (usePg) {
       return dbRun(
