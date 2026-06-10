@@ -57,7 +57,7 @@ jobs:
       - name: Build web client for Android
         working-directory: client
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://liturgia.onrender.com/api' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://liturgia-24z1.onrender.com/api' }}
           VITE_CAPACITOR_BUILD: 'true'
         run: npm run build:android
 

@@ -28,7 +28,8 @@ npm run migrate-to-postgres
 ## 3. Deploy on Render
 
 1. Create a **Web Service** connected to this GitHub repo.
-2. **Build command:** `npm install && npm run build`
+2. **Build command:** `npm install && npm run build`  
+   (TypeScript and Vite are in `client` dependencies so this works with `NODE_ENV=production`.)
 3. **Start command:** `npm start`
 4. **Environment variables:**
    - `DATABASE_URL` — your Neon connection string (wrap in quotes if needed)

@@ -4,7 +4,7 @@
 # Setup (one time):
 # 1. Push this repo to GitHub
 # 2. Repo → Settings → Secrets and variables → Actions → New repository secret
-# 3. Name: RENDER_APP_URL   Value: https://liturgia.onrender.com  (your Render URL, no trailing slash)
+# 3. Name: RENDER_APP_URL   Value: https://liturgia-24z1.onrender.com  (your Render URL, no trailing slash)
 # 4. Actions tab → enable workflows if prompted
 
 name: Keep Render warm

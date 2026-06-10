@@ -4,7 +4,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$ApiUrl = if ($env:VITE_API_URL) { $env:VITE_API_URL } else { "https://liturgia.onrender.com/api" }
+$ApiUrl = if ($env:VITE_API_URL) { $env:VITE_API_URL } else { "https://liturgia-24z1.onrender.com/api" }
 $Root = Split-Path -Parent $PSScriptRoot
 $Client = Join-Path $Root "client"
 $ApkOut = Join-Path $Root "Liturgia-debug.apk"
