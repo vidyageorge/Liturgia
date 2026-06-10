@@ -375,7 +375,10 @@ export default function Schedule() {
                   members={members}
                   value={apostles[name] || { name: '' }}
                   onChange={(value) =>
-                    setApostles((prev) => ({ ...prev, [name]: value }))
+                    setApostles((prev: Record<string, RoleAssignment>) => ({
+                      ...prev,
+                      [name]: value,
+                    }))
                   }
                 />
               </div>
@@ -411,7 +414,7 @@ export default function Schedule() {
                     className="form-input"
                     type="date"
                     value={editingMass.date}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setEditingMass({ ...editingMass, date: e.target.value })
                     }
                   />
@@ -421,7 +424,7 @@ export default function Schedule() {
                   <input
                     className="form-input"
                     value={editingMass.time}
-                    onChange={(e) =>
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                       setEditingMass({ ...editingMass, time: e.target.value })
                     }
                   />
@@ -432,7 +435,7 @@ export default function Schedule() {
                 <input
                   className="form-input"
                   value={editingMass.celebrant}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     setEditingMass({ ...editingMass, celebrant: e.target.value })
                   }
                 />
@@ -442,7 +445,9 @@ export default function Schedule() {
                 <textarea
                   className="form-textarea reason-input"
                   value={editReason}
-                  onChange={(e) => setEditReason(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setEditReason(e.target.value)
+                  }
                   required
                 />
               </div>
