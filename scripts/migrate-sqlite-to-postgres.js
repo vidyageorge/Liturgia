@@ -136,8 +136,27 @@ async function main() {
     `Found: ${data.members.length} members, ${data.priests.length} priests, ${data.masses.length} masses`
   );
 
-  if (data.members.length === 0 && data.masses.length === 0) {
-    console.warn('Warning: local database has no members or masses to copy.');
+  const neonCounts = await pool.query(`
+    SELECT
+      (SELECT COUNT(*) FROM members) AS members,
+      (SELECT COUNT(*) FROM masses) AS masses
+  `);
+  const neonMembers = Number(neonCounts.rows[0].members);
+  const neonMasses = Number(neonCounts.rows[0].masses);
+  const hasLocalData = data.members.length > 0 || data.masses.length > 0;
+
+  if (!hasLocalData) {
+    throw new Error(
+      'Local liturgia.db has no members or masses to copy.\n' +
+        `Neon still has ${neonMembers} members and ${neonMasses} masses — migration stopped to avoid wiping live data.\n` +
+        'Copy a liturgia.db that contains your real data into the project folder, then run again.'
+    );
+  }
+
+  if (neonMembers > 0 || neonMasses > 0) {
+    console.warn(
+      `Warning: Neon will be overwritten (currently ${neonMembers} members, ${neonMasses} masses).`
+    );
   }
 
   await pool.query(

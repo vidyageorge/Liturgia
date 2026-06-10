@@ -40,4 +40,5 @@ export const ROLE_LABELS: Record<string, string> = {
   gospel_narrator: 'Gospel Narrator',
   morning_adoration: 'Morning Adoration',
   departed_souls_reader: 'Departed Souls Reader',
+  way_of_cross: 'Way of the Cross',
 };

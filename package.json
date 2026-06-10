@@ -12,6 +12,7 @@
     "build:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-android-apk.ps1",
     "install-all": "npm install && cd client && npm install",
     "migrate-to-postgres": "node scripts/migrate-sqlite-to-postgres.js",
+    "import-schedule": "node scripts/import-mass-schedule.js",
     "postinstall": "cd client && npm install"
   },
   "keywords": ["liturgy", "church", "readers"],
