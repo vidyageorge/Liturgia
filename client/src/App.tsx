@@ -4,7 +4,7 @@ import Changelog from './pages/Changelog';
 import Community from './pages/Community';
 import Dashboard from './pages/Dashboard';
 import Masses from './pages/Masses';
-import Members from './pages/Members';
+import Readers from './pages/Readers';
 import Schedule from './pages/Schedule';
 import './App.css';
 
@@ -16,7 +16,8 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/schedule" element={<Schedule />} />
           <Route path="/masses" element={<Masses />} />
-          <Route path="/members" element={<Members />} />
+          <Route path="/readers" element={<Readers />} />
+          <Route path="/members" element={<Navigate to="/readers" replace />} />
           <Route path="/community" element={<Community />} />
           <Route path="/changelog" element={<Changelog />} />
           <Route path="*" element={<Navigate to="/" replace />} />

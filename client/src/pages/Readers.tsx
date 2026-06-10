@@ -10,29 +10,29 @@ const EXPERIENCE_LABELS: Record<string, string> = {
   experienced: 'Experienced Reader',
 };
 
-export default function Members() {
-  const [members, setMembers] = useState<Member[]>([]);
+export default function Readers() {
+  const [readers, setReaders] = useState<Member[]>([]);
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
-  const [historyMember, setHistoryMember] = useState<Member | null>(null);
+  const [historyReader, setHistoryReader] = useState<Member | null>(null);
   const [history, setHistory] = useState<MemberHistoryEntry[]>([]);
 
-  const loadMembers = () => api.getMembers().then(setMembers);
+  const loadReaders = () => api.getMembers().then(setReaders);
 
   useEffect(() => {
-    loadMembers();
+    loadReaders();
   }, []);
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
-    if (!term) return members;
-    return members.filter(
+    if (!term) return readers;
+    return readers.filter(
       (m) =>
         m.name.toLowerCase().includes(term) ||
         (m.phone && m.phone.includes(term))
     );
-  }, [members, search]);
+  }, [readers, search]);
 
   const handleAdd = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,7 +43,7 @@ export default function Members() {
       email: String(form.get('email') || ''),
     });
     setShowAdd(false);
-    loadMembers();
+    loadReaders();
   };
 
   const handleEdit = async (e: FormEvent<HTMLFormElement>) => {
@@ -60,28 +60,28 @@ export default function Members() {
         : null,
     });
     setEditing(null);
-    loadMembers();
+    loadReaders();
   };
 
-  const openHistory = async (member: Member) => {
-    setHistoryMember(member);
-    setHistory(await api.getMemberHistory(member.id));
+  const openHistory = async (reader: Member) => {
+    setHistoryReader(reader);
+    setHistory(await api.getMemberHistory(reader.id));
   };
 
   return (
     <>
       <div className="page-header">
-        <h2 className="page-title">Community Members</h2>
-        <p className="page-subtitle">Manage readers and liturgy participants</p>
+        <h2 className="page-title">Readers</h2>
+        <p className="page-subtitle">Manage the reader database for liturgy assignments</p>
       </div>
 
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
-            All Members <span className="count-badge">{members.length}</span>
+            All Readers <span className="count-badge">{readers.length}</span>
           </h3>
           <button type="button" className="btn btn-primary" onClick={() => setShowAdd(true)}>
-            Add Member
+            Add Reader
           </button>
         </div>
         <div className="card-body">
@@ -113,23 +113,23 @@ export default function Members() {
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="empty-state">
-                      <p>No members found</p>
+                      <p>No readers found</p>
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((member) => (
-                    <tr key={member.id}>
-                      <td>{member.name}</td>
-                      <td>{member.phone || '-'}</td>
-                      <td style={{ textAlign: 'center' }}>{member.reading_count ?? 0}</td>
+                  filtered.map((reader) => (
+                    <tr key={reader.id}>
+                      <td>{reader.name}</td>
+                      <td>{reader.phone || '-'}</td>
+                      <td style={{ textAlign: 'center' }}>{reader.reading_count ?? 0}</td>
                       <td style={{ textAlign: 'center' }}>
-                        {member.experience_level
-                          ? EXPERIENCE_LABELS[member.experience_level] || member.experience_level
+                        {reader.experience_level
+                          ? EXPERIENCE_LABELS[reader.experience_level] || reader.experience_level
                           : 'Auto'}
                       </td>
                       <td>
-                        {member.roles.length
-                          ? member.roles.map((r) => (
+                        {reader.roles.length
+                          ? reader.roles.map((r) => (
                               <span key={r} className="badge badge-burgundy badge-inline">
                                 {r}
                               </span>
@@ -141,14 +141,14 @@ export default function Members() {
                           <button
                             type="button"
                             className="btn btn-outline btn-sm"
-                            onClick={() => setEditing(member)}
+                            onClick={() => setEditing(reader)}
                           >
                             Edit
                           </button>
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"
-                            onClick={() => openHistory(member)}
+                            onClick={() => openHistory(reader)}
                           >
                             History
                           </button>
@@ -163,8 +163,8 @@ export default function Members() {
         </div>
       </div>
 
-      <Modal title="Add Member" isOpen={showAdd} onClose={() => setShowAdd(false)}>
-        <form id="add-member-form" onSubmit={handleAdd}>
+      <Modal title="Add Reader" isOpen={showAdd} onClose={() => setShowAdd(false)}>
+        <form id="add-reader-form" onSubmit={handleAdd}>
           <div className="form-group">
             <label className="form-label">Full Name *</label>
             <input className="form-input" name="name" required />
@@ -182,16 +182,16 @@ export default function Members() {
           <button type="button" className="btn btn-outline" onClick={() => setShowAdd(false)}>
             Cancel
           </button>
-          <button type="submit" form="add-member-form" className="btn btn-primary">
-            Save Member
+          <button type="submit" form="add-reader-form" className="btn btn-primary">
+            Save Reader
           </button>
         </div>
       </Modal>
 
-      <Modal title="Edit Member" isOpen={!!editing} onClose={() => setEditing(null)}>
+      <Modal title="Edit Reader" isOpen={!!editing} onClose={() => setEditing(null)}>
         {editing && (
           <>
-            <form id="edit-member-form" onSubmit={handleEdit}>
+            <form id="edit-reader-form" onSubmit={handleEdit}>
               <div className="form-group">
                 <label className="form-label">Full Name *</label>
                 <input className="form-input" name="name" defaultValue={editing.name} required />
@@ -232,8 +232,8 @@ export default function Members() {
               <button type="button" className="btn btn-outline" onClick={() => setEditing(null)}>
                 Cancel
               </button>
-              <button type="submit" form="edit-member-form" className="btn btn-primary">
-                Update Member
+              <button type="submit" form="edit-reader-form" className="btn btn-primary">
+                Update Reader
               </button>
             </div>
           </>
@@ -241,9 +241,9 @@ export default function Members() {
       </Modal>
 
       <Modal
-        title={historyMember ? `Reading History — ${historyMember.name}` : 'History'}
-        isOpen={!!historyMember}
-        onClose={() => setHistoryMember(null)}
+        title={historyReader ? `Reading History — ${historyReader.name}` : 'History'}
+        isOpen={!!historyReader}
+        onClose={() => setHistoryReader(null)}
         wide
       >
         {history.length === 0 ? (

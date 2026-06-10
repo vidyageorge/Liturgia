@@ -99,7 +99,7 @@ export default function Community() {
                         className="btn btn-outline btn-sm"
                         onClick={() => setAssignRole(role)}
                       >
-                        Assign Member
+                        Assign Reader
                       </button>
                     </div>
                     {role.description && (
@@ -107,7 +107,7 @@ export default function Community() {
                     )}
                     <div className="member-chips">
                       {role.members.length === 0 ? (
-                        <span className="text-muted">No members assigned</span>
+                        <span className="text-muted">No readers assigned</span>
                       ) : (
                         role.members.map((name) => (
                           <span key={name} className="member-chip">
@@ -164,15 +164,15 @@ export default function Community() {
       </Modal>
 
       <Modal
-        title={assignRole ? `Assign Member — ${assignRole.name}` : 'Assign'}
+        title={assignRole ? `Assign Reader — ${assignRole.name}` : 'Assign'}
         isOpen={!!assignRole}
         onClose={() => setAssignRole(null)}
       >
         <form id="assign-role-form" onSubmit={handleAssign}>
           <div className="form-group">
-            <label className="form-label">Member</label>
+            <label className="form-label">Reader</label>
             <select className="form-select" name="member_id" required>
-              <option value="">Select member</option>
+              <option value="">Select reader</option>
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}

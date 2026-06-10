@@ -30,7 +30,7 @@ export default function Dashboard() {
     <>
       <div className="page-header">
         <h2 className="page-title">Welcome to Liturgia</h2>
-        <p className="page-subtitle">Sacred Ministry Roster Management System</p>
+        <p className="page-subtitle">Reader roster and liturgy assignment management</p>
       </div>
 
       <div className="grid grid-4 stats-row">
@@ -38,7 +38,7 @@ export default function Dashboard() {
           <div className="stat-icon gold">👥</div>
           <div>
             <div className="stat-value">{stats?.total_members ?? 0}</div>
-            <div className="stat-label">Active Members</div>
+            <div className="stat-label">Active Readers</div>
           </div>
         </div>
         <div className="stat-card">
@@ -96,15 +96,15 @@ export default function Dashboard() {
 
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Top Volunteers</h3>
-            <Link to="/members" className="btn btn-primary btn-sm">
-              All Members
+            <h3 className="card-title">Top Readers</h3>
+            <Link to="/readers" className="btn btn-primary btn-sm">
+              All Readers
             </Link>
           </div>
           <div className="card-body volunteer-list">
             {(stats?.top_volunteers || []).length === 0 ? (
               <div className="empty-state">
-                <p>No volunteers yet</p>
+                <p>No readers yet</p>
               </div>
             ) : (
               stats?.top_volunteers.map((volunteer, index) => (

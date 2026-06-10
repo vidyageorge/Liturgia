@@ -12,7 +12,7 @@ export default function MemberSelect({
   members,
   value,
   onChange,
-  placeholder = 'Search member or type a name...',
+  placeholder = 'Search reader or type a name...',
 }: MemberSelectProps) {
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
