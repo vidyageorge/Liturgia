@@ -1,0 +1,838 @@
+:root {
+  --primary-gold: #c9a227;
+  --primary-burgundy: #722f37;
+  --primary-cream: #fdf8f0;
+  --dark-wood: #3d2914;
+  --deep-purple: #4a1942;
+  --sacred-blue: #1e3a5f;
+  --light-gold: #e8d5a3;
+  --soft-white: #fefdfb;
+  --text-dark: #2c1810;
+  --text-muted: #6b5b4f;
+  --shadow-soft: 0 4px 20px rgba(61, 41, 20, 0.1);
+  --shadow-medium: 0 8px 30px rgba(61, 41, 20, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Montserrat, sans-serif;
+  background: var(--primary-cream);
+  color: var(--text-dark);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(201, 162, 39, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(114, 47, 55, 0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.main-header {
+  background: linear-gradient(135deg, var(--dark-wood), var(--primary-burgundy) 50%, var(--deep-purple));
+  box-shadow: var(--shadow-medium);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.3);
+}
+
+.church-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.header-titles {
+  text-align: center;
+}
+
+.community-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--light-gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0 0 0.3rem;
+}
+
+.app-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.main-nav {
+  display: flex;
+  justify-content: center;
+}
+
+.nav-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.nav-item a {
+  display: block;
+  padding: 1rem 1.5rem;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-bottom: 3px solid transparent;
+}
+
+.nav-item a:hover,
+.nav-item a.active {
+  color: var(--light-gold);
+  background: rgba(201, 162, 39, 0.1);
+  border-bottom-color: var(--primary-gold);
+}
+
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.4rem;
+  font-weight: 600;
+  color: var(--dark-wood);
+  margin: 0 0 0.5rem;
+}
+
+.page-subtitle {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.page-actions {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.card,
+.mass-card {
+  background: var(--soft-white);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.card-header,
+.mass-card-header {
+  background: linear-gradient(135deg, var(--primary-burgundy), var(--deep-purple));
+  color: white;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mass-card.special .mass-card-header {
+  background: linear-gradient(135deg, var(--primary-gold), #b8860b);
+  color: var(--dark-wood);
+}
+
+.card-title,
+.mass-card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.card-body,
+.mass-card-body {
+  padding: 1.5rem;
+}
+
+.mass-card {
+  margin-bottom: 1.5rem;
+}
+
+.mass-card-date {
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.grid-4,
+.stats-row {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--soft-white);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.stat-icon.gold { background: linear-gradient(135deg, var(--primary-gold), #d4af37); }
+.stat-icon.burgundy { background: linear-gradient(135deg, var(--primary-burgundy), #8b3a44); }
+.stat-icon.blue { background: linear-gradient(135deg, var(--sacred-blue), #2a4a6b); }
+.stat-icon.purple { background: linear-gradient(135deg, var(--deep-purple), #5c2254); }
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary-gold), #d4af37);
+  color: var(--dark-wood);
+}
+
+.btn-secondary {
+  background: var(--sacred-blue);
+  color: white;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--primary-burgundy);
+  color: var(--primary-burgundy);
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.form-input,
+.form-select,
+.form-textarea,
+.searchable-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e0d6c8;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  background: white;
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus,
+.searchable-input:focus {
+  outline: none;
+  border-color: var(--primary-gold);
+}
+
+.table-container,
+.table-card {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.9rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e0d6c8;
+}
+
+.table th {
+  background: #f5efe6;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-gold { background: rgba(201, 162, 39, 0.15); color: #9a7b1c; }
+.badge-burgundy { background: rgba(114, 47, 55, 0.15); color: var(--primary-burgundy); }
+.badge-blue { background: rgba(30, 58, 95, 0.15); color: var(--sacred-blue); }
+.badge-inline { margin-right: 0.35rem; margin-bottom: 0.35rem; }
+
+.count-badge {
+  background: white;
+  color: var(--primary-burgundy);
+  border: 2px solid var(--primary-burgundy);
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  margin-left: 0.5rem;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e0d6c8;
+}
+
+.list-row-title {
+  font-weight: 600;
+}
+
+.list-row-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.volunteer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.volunteer-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.volunteer-row.rank-1 { background: #fff9e6; border-left: 4px solid #ffd700; }
+.volunteer-row.rank-2 { background: #f5f5f5; border-left: 4px solid #c0c0c0; }
+.volunteer-row.rank-3 { background: #fff5e6; border-left: 4px solid #cd7f32; }
+
+.volunteer-name { font-weight: 600; }
+.volunteer-count { font-size: 0.85rem; color: var(--text-muted); }
+.volunteer-rank { margin-left: auto; font-size: 1.3rem; font-weight: 700; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal {
+  background: var(--soft-white);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-wide {
+  max-width: 900px;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, var(--primary-burgundy), var(--deep-purple));
+  color: white;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer,
+.modal-footer-inline {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e0d6c8;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.modal-footer-inline {
+  margin-top: 1rem;
+  padding-bottom: 0;
+  border-top: none;
+}
+
+.toolbar {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  max-width: 400px;
+}
+
+.toolbar-note,
+.text-muted {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.form-panel {
+  background: #f5efe6;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.reason-label { color: #dc3545; }
+.reason-input { border-color: #dc3545; }
+
+.community-structure {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.ministry-card {
+  background: var(--soft-white);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.ministry-header {
+  padding: 1.25rem 1.5rem;
+}
+
+.ministry-header.liturgy { background: linear-gradient(135deg, var(--primary-burgundy), #8b3a44); color: white; }
+.ministry-header.choir { background: linear-gradient(135deg, var(--sacred-blue), #2a4a6b); color: white; }
+.ministry-header.catechism { background: linear-gradient(135deg, var(--deep-purple), #5c2254); color: white; }
+.ministry-header.volunteers { background: linear-gradient(135deg, var(--primary-gold), #b8860b); color: var(--dark-wood); }
+.ministry-header.executive { background: linear-gradient(135deg, var(--dark-wood), #5a3e2b); color: white; }
+
+.ministry-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.ministry-body {
+  padding: 1.5rem;
+}
+
+.role-section {
+  margin-bottom: 1.25rem;
+}
+
+.role-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.role-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.role-description {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0 0 0.75rem;
+}
+
+.member-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f5efe6;
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+}
+
+.chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  padding: 0.75rem 1.25rem;
+  border: 2px solid var(--primary-burgundy);
+  border-radius: 8px;
+  background: white;
+  color: var(--primary-burgundy);
+  cursor: pointer;
+}
+
+.filter-tab.active,
+.filter-tab:hover {
+  background: var(--primary-burgundy);
+  color: white;
+}
+
+.export-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.export-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.export-year {
+  width: 120px;
+}
+
+.assignment-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.assignment-item {
+  background: #f5efe6;
+  padding: 1rem;
+  border-radius: 10px;
+  border-left: 4px solid var(--primary-gold);
+}
+
+.assignment-role {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.assignment-name {
+  font-weight: 600;
+}
+
+.apostles-section {
+  margin-top: 1.5rem;
+}
+
+.apostle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.apostle-item {
+  background: white;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e0d6c8;
+}
+
+.apostle-name {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.mass-notes {
+  margin-top: 1rem;
+  color: var(--text-muted);
+}
+
+.role-assignment {
+  background: #f5efe6;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.role-assignment-header {
+  margin-bottom: 0.75rem;
+}
+
+.role-name {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.searchable-dropdown {
+  position: relative;
+}
+
+.searchable-dropdown-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid var(--primary-gold);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: var(--shadow-soft);
+}
+
+.searchable-dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-bottom: 1px solid #f0ebe3;
+  background: white;
+  cursor: pointer;
+}
+
+.searchable-dropdown-item:hover,
+.searchable-dropdown-item.custom-option {
+  background: #f5efe6;
+}
+
+.member-phone {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.selected-reader,
+.reader-chips .selected-reader {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--primary-gold);
+  color: var(--dark-wood);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  margin: 0.35rem 0.35rem 0 0;
+}
+
+.remove-selection {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.upcoming-mass-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--primary-gold);
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+}
+
+.upcoming-mass-info h4 {
+  margin: 0 0 0.25rem;
+}
+
+.upcoming-mass-info p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.assignments-card {
+  overflow: visible;
+}
+
+.assignments-card .card-body {
+  overflow: visible;
+}
+
+.save-row {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.feature-list {
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.header-filters {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
+  }
+
+  .church-logo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .community-name {
+    font-size: 1.4rem;
+  }
+
+  .page-title {
+    font-size: 1.8rem;
+  }
+
+  .nav-item a {
+    padding: 0.75rem 1rem;
+    font-size: 0.7rem;
+  }
+}

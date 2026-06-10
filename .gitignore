@@ -44,3 +44,13 @@ Thumbs.db
 # Environment variables
 .env
 .env.local
+.env.postgres
+
+# Node
+node_modules/
+client/node_modules/
+client/dist/
+npm-debug.log*
+
+# Legacy Python virtualenv
+venv/
